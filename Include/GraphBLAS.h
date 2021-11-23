@@ -4923,6 +4923,20 @@ GrB_Info GrB_mxm                    // C<Mask> = accum (C, A*B)
     const GrB_Descriptor desc       // descriptor for C, Mask, A, and B
 ) ;
 
+GrB_Info GxB_dmxm
+(
+    GrB_Matrix C,
+    GrB_Matrix dC,
+    const GrB_Matrix Mask,
+    const GrB_BinaryOp accum,
+    const GrB_Semiring semiring,
+    const GrB_Matrix A,
+    GrB_Matrix dA,
+    const GrB_Matrix B,
+    GrB_Matrix dB,
+    const GrB_Descriptor desc
+) ;
+
 GB_PUBLIC
 GrB_Info GrB_vxm                    // w'<Mask> = accum (w, u'*A)
 (

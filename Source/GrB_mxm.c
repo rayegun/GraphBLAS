@@ -66,3 +66,19 @@ GrB_Info GrB_mxm                    // C<M> = accum (C, A*B)
     return (info) ;
 }
 
+GrB_Info GxB_dmxm
+(
+    GrB_Matrix C,
+    GrB_Matrix dC,
+    const GrB_Matrix Mask,
+    const GrB_BinaryOp accum,
+    const GrB_Semiring semiring,
+    const GrB_Matrix A,
+    GrB_Matrix dA,
+    const GrB_Matrix B,
+    GrB_Matrix dB,
+    const GrB_Descriptor desc
+)
+{
+    return __enzyme_autodiff(GrB_mxm, C, dC, Mask, accum, semiring, A, dA, B, dB, desc);
+}

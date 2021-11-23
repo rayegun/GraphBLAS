@@ -24,7 +24,7 @@ VER2 = 0
 VER3 = 0
 
 # pick your compiler:
-  CC = gcc
+  CC = clang-13
 # CC = cc
 # CC = clang
 # CC = xlc
@@ -40,7 +40,7 @@ OBJ = $(SRC2:.c=.o)
 LDFLAGS = -fopenmp -lm
 CFLAGS = -fopenmp -fexceptions -fPIC
 # pick the optimization level:
-  CFLAGS += -O3
+  CFLAGS += -O3 -ffast-math -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
 # CFLAGS += -g
 # to compile GraphBLAS as compact (fast to compile, small libgraphblas.so,
 # but slow at run time), uncomment this line:
@@ -50,7 +50,7 @@ ifneq ($(CC),c++)
 endif
 CPPFLAGS = -I../Include -I../Source -I../Source/Template -I../Source/Generated1 -I../Source/Generated2 -I../lz4
 SO_OPTS = $(LDFLAGS)
-CFLAGS += -Wno-pragmas
+CFLAGS += -Wno-pragmas 
 
 # To compile the libgraphblas_renamed library, change all occurences of
 # libgraphblas to libgraphblas_renamed, below, and uncomment these 2 lines:
@@ -82,12 +82,13 @@ endif
 %.o: ../Source/Generated2/%.c $(INC)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $(notdir $@)
 
+# ln -sf $(SO_NAME) $(SO_NAME0) ln -sf $(SO_NAME) $(SO_NAME1)
 library: $(SO_NAME)
-	ln -sf $(SO_NAME) $(SO_NAME0)
-	ln -sf $(SO_NAME) $(SO_NAME1)
+	
 
+# $(SO_OPTS)
 $(SO_NAME): $(OBJ)
-	$(CC) $(SO_OPTS) $^ -o $@
+	$(CC) $^ -o $@
 
 .KEEP: $(OBJ)
 
