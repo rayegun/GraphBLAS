@@ -15,6 +15,10 @@
 #include "GB_mxm.h"
 #include "GB_get_mask.h"
 
+int enzyme_dup;
+int enzyme_out;
+int enzyme_const;
+
 GrB_Info GrB_mxm                    // C<M> = accum (C, A*B)
 (
     GrB_Matrix C,                   // input/output matrix for results
@@ -66,3 +70,37 @@ GrB_Info GrB_mxm                    // C<M> = accum (C, A*B)
     return (info) ;
 }
 
+InfoAndTape GxB_fwdmxm
+(
+    GrB_Matrix C,                   // input/output matrix for results
+    GrB_Matrix dC,
+    GrB_Matrix Mask,          // optional mask for C, unused if NULL
+    GrB_BinaryOp accum,       // optional accum for Z=accum(C,T)
+    GrB_Semiring semiring,    // defines '+' and '*' for A*B
+    GrB_Matrix A,             // first input:  matrix A
+    GrB_Matrix dA,
+    GrB_Matrix B,             // second input: matrix B
+    GrB_Matrix dB,
+    GrB_Descriptor desc 
+)
+{
+    return __enzyme_augmentfwd((void *)GrB_mxm, enzyme_dup, C, dC, enzyme_const, Mask, enzyme_const, accum, enzyme_const, semiring, enzyme_dup, A, dA, enzyme_dup, B, dB, enzyme_const, desc);
+}
+
+GrB_Info GxB_revmxm
+(
+    GrB_Matrix C,
+    GrB_Matrix dC,
+    GrB_Matrix Mask,
+    GrB_BinaryOp accum,
+    GrB_Semiring semiring,
+    GrB_Matrix A,
+    GrB_Matrix dA,
+    GrB_Matrix B,
+    GrB_Matrix dB,
+    GrB_Descriptor desc,
+    void* tape
+)
+{
+    return __enzyme_reverse((void *)GrB_mxm, enzyme_dup, C, dC, enzyme_const, Mask, enzyme_const, accum, enzyme_const, semiring, enzyme_dup, A, dA, enzyme_dup, B, dB, enzyme_const, desc, tape);
+}

@@ -24,9 +24,9 @@ VER2 = 0
 VER3 = 2
 
 # pick your compiler:
-  CC = gcc
+#  CC = gcc
 # CC = cc
-# CC = clang
+ CC = clang-12
 # CC = xlc
 # CC = gcc-8
 # note that -mp1 is essential for icc, for proper Inf and NaN behavior:
@@ -38,18 +38,18 @@ INC = ../Include/*.h ../Source/*.h ../Source/Template/* ../Source/Generated1/*.h
 SRC2 = $(notdir $(wildcard $(SRC)))
 OBJ = $(SRC2:.c=.o)
 LDFLAGS = -fopenmp -lm
-CFLAGS = -fopenmp -fexceptions -fPIC
+CFLAGS = -fuse-ld=lld -flto -fopenmp -fexceptions -fPIC
 # pick the optimization level:
-  CFLAGS += -O3
+  CFLAGS += -O2
 # CFLAGS += -g
 # to compile GraphBLAS as compact (fast to compile, small libgraphblas.so,
 # but slow at run time), uncomment this line:
-# CFLAGS += -DGBCOMPACT=1
+CFLAGS += -DGBCOMPACT=1
 ifneq ($(CC),c++)
     CFLAGS += -std=c11
 endif
 CPPFLAGS = -I../Include -I../Source -I../Source/Template -I../Source/Generated1 -I../Source/Generated2 -I../lz4
-SO_OPTS = $(LDFLAGS)
+SO_OPTS = -fuse-ld=lld -flto -O2 -Wl,-mllvm=-load=/home/will/Enzyme/enzyme/build/Enzyme/ClangEnzyme-12.so -Wl,-mllvm=-enzyme-print-type -Wl,-mllvm=-enzyme-print $(LDFLAGS)
 CFLAGS += -Wno-pragmas
 
 # To compile the libgraphblas_renamed library, change all occurences of
@@ -128,7 +128,7 @@ run: $(DEMO)
 	./altdemo
 
 clean:
-	$(RM) -f *.o *.out *_out.m *_out2.m
+	$(RM) -f *.o *.out *_out.m *_out2.m *.ll
 
 distclean: clean
 	$(RM) -rf *.dSYM $(DEMO) libgraphblas.*
