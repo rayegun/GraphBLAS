@@ -24,9 +24,9 @@ VER2 = 0
 VER3 = 2
 
 # pick your compiler:
-  CC = gcc
+#  CC = gcc
 # CC = cc
-# CC = clang
+CC = clang-12
 # CC = xlc
 # CC = gcc-8
 # note that -mp1 is essential for icc, for proper Inf and NaN behavior:
@@ -37,8 +37,8 @@ SRC = ../Source/*.c ../Source/Generated1/*.c ../Source/Generated2/*.c
 INC = ../Include/*.h ../Source/*.h ../Source/Template/* ../Source/Generated1/*.h ../Source/Generated2/*.h
 SRC2 = $(notdir $(wildcard $(SRC)))
 OBJ = $(SRC2:.c=.o)
-LDFLAGS = -fopenmp -lm
-CFLAGS = -fopenmp -fexceptions -fPIC
+LDFLAGS = -fopenmp -lm -flto -fuse-ld=lld
+CFLAGS = -fopenmp -fexceptions -fPIC -flto #-fembed-bitcode
 # pick the optimization level:
   CFLAGS += -O3
 # CFLAGS += -g
