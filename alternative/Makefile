@@ -37,14 +37,14 @@ SRC = ../Source/*.c ../Source/Generated1/*.c ../Source/Generated2/*.c
 INC = ../Include/*.h ../Source/*.h ../Source/Template/* ../Source/Generated1/*.h ../Source/Generated2/*.h
 SRC2 = $(notdir $(wildcard $(SRC)))
 OBJ = $(SRC2:.c=.o)
-LDFLAGS = -fopenmp -lm -flto -fuse-ld=lld
-CFLAGS = -fopenmp -fexceptions -fPIC -flto #-fembed-bitcode
+LDFLAGS = $(CFLAGS) -lm -fuse-ld=lld -v -fembed-bitcode
+CFLAGS = -fopenmp -fexceptions -fPIC -fembed-bitcode
 # pick the optimization level:
   CFLAGS += -O3
 # CFLAGS += -g
 # to compile GraphBLAS as compact (fast to compile, small libgraphblas.so,
 # but slow at run time), uncomment this line:
-# CFLAGS += -DGBCOMPACT=1
+CFLAGS += -DGBCOMPACT=1
 ifneq ($(CC),c++)
     CFLAGS += -std=c11
 endif
