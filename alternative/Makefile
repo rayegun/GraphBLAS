@@ -44,7 +44,7 @@ CFLAGS = -fopenmp -fexceptions -fPIC -fembed-bitcode
 # CFLAGS += -g
 # to compile GraphBLAS as compact (fast to compile, small libgraphblas.so,
 # but slow at run time), uncomment this line:
-CFLAGS += -DGBCOMPACT=1
+# CFLAGS += -DGBCOMPACT=1
 ifneq ($(CC),c++)
     CFLAGS += -std=c11
 endif
