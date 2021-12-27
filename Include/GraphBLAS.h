@@ -4924,7 +4924,8 @@ GrB_Info GrB_mxm                    // C<Mask> = accum (C, A*B)
 ) ;
 
 typedef struct InfoAndTape {
-    GrB_Info info;
+    GrB_Info prim;
+    GrB_Info shadow;
     void* tape;
 } InfoAndTape;
 
@@ -4950,7 +4951,7 @@ GB_PUBLIC InfoAndTape GxB_fwdmxm
     GrB_Descriptor desc
 ) ;
 
-GB_PUBLIC GrB_Info GxB_revmxm
+GB_PUBLIC void GxB_revmxm
 (
     GrB_Matrix C,
     GrB_Matrix dC,

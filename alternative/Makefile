@@ -37,8 +37,8 @@ SRC = ../Source/*.c ../Source/Generated1/*.c ../Source/Generated2/*.c
 INC = ../Include/*.h ../Source/*.h ../Source/Template/* ../Source/Generated1/*.h ../Source/Generated2/*.h
 SRC2 = $(notdir $(wildcard $(SRC)))
 OBJ = $(SRC2:.c=.o)
-LDFLAGS = -fopenmp -lm
-CFLAGS = -fuse-ld=lld -flto -fopenmp -fexceptions -fPIC
+LDFLAGS = -lm
+CFLAGS = -fuse-ld=lld -flto -fexceptions -fPIC
 # pick the optimization level:
   CFLAGS += -O2
 # CFLAGS += -g
@@ -49,7 +49,7 @@ ifneq ($(CC),c++)
     CFLAGS += -std=c11
 endif
 CPPFLAGS = -I../Include -I../Source -I../Source/Template -I../Source/Generated1 -I../Source/Generated2 -I../lz4
-SO_OPTS = -fuse-ld=lld -flto -O2 -Wl,-mllvm=-load=/home/will/Enzyme/enzyme/build/Enzyme/ClangEnzyme-12.so -Wl,-mllvm=-enzyme-print-type -Wl,-mllvm=-enzyme-print $(LDFLAGS)
+SO_OPTS = -fuse-ld=lld -flto -O2 -Wl,-mllvm=-load=/home/will/Enzyme/enzyme/build/Enzyme/ClangEnzyme-12.so -Wl,-mllvm=-enzyme-print $(LDFLAGS) -Wl,-mllvm=-enzyme-strict-aliasing=0 -Wl,-mllvm=-enzyme-max-type-offset=100 -Wl,-mllvm=-enzyme-loose-types
 CFLAGS += -Wno-pragmas
 
 # To compile the libgraphblas_renamed library, change all occurences of

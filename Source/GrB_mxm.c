@@ -87,7 +87,7 @@ InfoAndTape GxB_fwdmxm
     return __enzyme_augmentfwd((void *)GrB_mxm, enzyme_dup, C, dC, enzyme_const, Mask, enzyme_const, accum, enzyme_const, semiring, enzyme_dup, A, dA, enzyme_dup, B, dB, enzyme_const, desc);
 }
 
-GrB_Info GxB_revmxm
+void GxB_revmxm
 (
     GrB_Matrix C,
     GrB_Matrix dC,
@@ -102,5 +102,5 @@ GrB_Info GxB_revmxm
     void* tape
 )
 {
-    return __enzyme_reverse((void *)GrB_mxm, enzyme_dup, C, dC, enzyme_const, Mask, enzyme_const, accum, enzyme_const, semiring, enzyme_dup, A, dA, enzyme_dup, B, dB, enzyme_const, desc, tape);
+    __enzyme_reverse((void *)GrB_mxm, enzyme_dup, C, dC, enzyme_const, Mask, enzyme_const, accum, enzyme_const, semiring, enzyme_dup, A, dA, enzyme_dup, B, dB, enzyme_const, desc, tape);
 }
