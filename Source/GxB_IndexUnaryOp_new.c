@@ -47,7 +47,7 @@ GrB_Info GxB_IndexUnaryOp_new       // create a new user-defined index_unary op
     //--------------------------------------------------------------------------
 
     size_t header_size ;
-    (*op) = GB_MALLOC (1, struct GB_IndexUnaryOp_opaque, &header_size) ;
+    (*op) = GB_MALLOCVEC (struct GB_IndexUnaryOp_opaque, sizeof(struct GB_IndexUnaryOp_opaque), GrB_UINT8, &header_size) ;
     if (*op == NULL)
     { 
         // out of memory

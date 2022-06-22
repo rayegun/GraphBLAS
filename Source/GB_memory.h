@@ -134,6 +134,11 @@ void GB_memset                  // parallel memset
         ; printf ("malloc  (%s, line %d): size %lu\n", \
             __FILE__, __LINE__, *(s)) ; \
 
+    #define GB_MALLOCVEC(ptrtype, n,type,s) \
+        (ptrtype *) GB_malloc_memory (n, type->size, s) ; \
+        ; printf ("malloc  (%s, line %d): size %lu\n", \
+            __FILE__, __LINE__, *(s)) ; \
+
     #define GB_REALLOC(p,nnew,type,s,ok,Context) \
         p = (type *) GB_realloc_memory (nnew, sizeof (type), \
             (void *) p, s, ok, Context) ; \
@@ -153,9 +158,15 @@ void GB_memset                  // parallel memset
     #define GB_CALLOC(n,type,s) \
         (type *) GB_calloc_memory (n, sizeof (type), s, Context)
 
+    #define GB_CALLOCVEC(ptrtype,n,type,s) \
+        (ptrtype *) GB_calloc_memory (n, type->size, s, Context)
+
     #define GB_MALLOC(n,type,s) \
         (type *) GB_malloc_memory (n, sizeof (type), s)
 
+    #define GB_MALLOCVEC(ptrtype,n,type,s) \
+        (ptrtype *) GB_malloc_memory (n, type->size, s)
+        
     #define GB_REALLOC(p,nnew,type,s,ok,Context) \
         p = (type *) GB_realloc_memory (nnew, sizeof (type), \
             (void *) p, s, ok, Context)

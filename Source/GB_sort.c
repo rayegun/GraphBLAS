@@ -448,7 +448,7 @@ GrB_Info GB_sort
     else
     {
         // allocate P->i and use it to construct the new indices
-        P->i = GB_MALLOC (cnz, int64_t, &(P->i_size)) ;
+        P->i = GB_MALLOCVEC (int64_t, cnz, GrB_INT64, &(P->i_size)) ;
         if (P->i == NULL)
         { 
             // out of memory
@@ -511,12 +511,12 @@ GrB_Info GB_sort
             // become the values of P.  Cp is copied to Pp, and Ch (if present)
             // is copied to Ph.
             P->plen = cnvec ;
-            P->x = GB_MALLOC (cnz, int64_t, &(P->x_size)) ; // x:OK
-            P->p = GB_MALLOC (cnvec+1, int64_t, &(P->p_size)) ;
+            P->x = GB_MALLOCVEC (int64_t, cnz, GrB_INT64, &(P->x_size)) ; // x:OK
+            P->p = GB_MALLOCVEC (int64_t, cnvec+1, GrB_INT64, &(P->p_size)) ;
             P->h = NULL ;
             if (C_is_hyper)
             { 
-                P->h = GB_MALLOC (cnvec, int64_t, &(P->h_size)) ;
+                P->h = GB_MALLOCVEC (int64_t, cnvec, GrB_INT64, &(P->h_size)) ;
             }
             if (P->x == NULL || P->p == NULL || (C_is_hyper && P->h == NULL))
             { 

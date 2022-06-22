@@ -83,8 +83,8 @@ GrB_Info GB_hyper_prune
     // allocate the result
     //--------------------------------------------------------------------------
 
-    Ap = GB_MALLOC (nvec+1, int64_t, &Ap_size) ;
-    Ah = GB_MALLOC (nvec  , int64_t, &Ah_size) ;
+    Ap = GB_MALLOCVEC (int64_t, nvec+1, GrB_INT64, &Ap_size) ;
+    Ah = GB_MALLOCVEC (int64_t, nvec  , GrB_INT64, &Ah_size) ;
     if (Ap == NULL || Ah == NULL)
     { 
         // out of memory

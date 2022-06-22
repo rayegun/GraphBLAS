@@ -9,6 +9,7 @@
 
 #include "GB.h"
 
+// TODO: This needs to be type based not type_size based most likely.
 void *GB_xalloc_memory      // return the newly-allocated space
 (
     // input
@@ -33,7 +34,7 @@ void *GB_xalloc_memory      // return the newly-allocated space
     }
     else
     { 
-        p = GB_MALLOC (n * type_size, GB_void, size) ; // x:OK
+        p = GB_MALLOCVEC (GB_void, n * type_size, GrB_UINT8, size) ; // x:OK
     }
     return (p) ;
 }

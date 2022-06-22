@@ -57,7 +57,7 @@ GrB_Info GB_concat_hyper            // concatenate into a hypersparse matrix
 
     GB_phbix_free (C) ;
 
-    Wi = GB_MALLOC (cnz, int64_t, &Wi_size) ;               // becomes C->i
+    Wi = GB_MALLOCVEC (int64_t, cnz, GrB_INT64, &Wi_size) ;               // becomes C->i
     Wj = GB_MALLOC_WORK (cnz, int64_t, &Wj_size) ;          // freed below
     if (!C_iso)
     { 

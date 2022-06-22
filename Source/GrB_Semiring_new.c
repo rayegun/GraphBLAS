@@ -64,7 +64,7 @@ GrB_Info GrB_Semiring_new           // create a semiring
     //--------------------------------------------------------------------------
 
     size_t header_size ;
-    (*semiring) = GB_MALLOC (1, struct GB_Semiring_opaque, &header_size) ;
+    (*semiring) = GB_MALLOCVEC (struct GB_Semiring_opaque, sizeof(struct GB_Semiring_opaque), GrB_UINT8, &header_size) ;
     if (*semiring == NULL)
     {
         // out of memory

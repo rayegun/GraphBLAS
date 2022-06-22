@@ -79,7 +79,7 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
         return (GrB_OUT_OF_MEMORY) ;
     }
     anzmax = GB_IMAX (anzmax, 1) ;
-    Ab = GB_MALLOC (anzmax, int8_t, &Ab_size) ;
+    Ab = GB_MALLOCVEC (int8_t, anzmax, GrB_INT8, &Ab_size) ;
     if (Ab == NULL)
     { 
         // out of memory
@@ -104,7 +104,7 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
         // A->x must be modified to fit the bitmap structure.  A->x is calloc'd
         // since otherwise it would contain uninitialized values where A->b is
         // false and entries are not present.
-        Ax_new = GB_CALLOC (anzmax * asize, GB_void, &Ax_size) ; // x:OK:calloc
+        Ax_new = GB_CALLOCVEC (GB_void, anzmax * asize, A->type, &Ax_size) ; // x:OK:calloc
         Ax_shallow = false ;
         if (Ax_new == NULL)
         { 

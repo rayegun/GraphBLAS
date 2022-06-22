@@ -86,8 +86,8 @@ GrB_Info GB_serialize_array
         // no compression, return result as a single block (plus the sentinel)
         if (!dryrun)
         {
-            Blocks = GB_MALLOC (2, GB_blocks, &Blocks_size) ;
-            Sblocks = GB_MALLOC (2, int64_t, &Sblocks_size) ;
+            Blocks = GB_MALLOCVEC (GB_blocks, 2 * sizeof(GB_blocks), GrB_UINT8, &Blocks_size) ;
+            Sblocks = GB_MALLOCVEC (int64_t, 2, GrB_INT64, &Sblocks_size) ;
             if (Blocks == NULL || Sblocks == NULL)
             { 
                 // out of memory
@@ -177,7 +177,7 @@ GrB_Info GB_serialize_array
         { 
             // allocate the block
             size_t size_allocated = 0 ;
-            GB_void *p = GB_MALLOC (s, GB_void, &size_allocated) ;
+            GB_void *p = GB_MALLOCVEC (GB_void, s, GrB_UINT8, &size_allocated) ;
             ok = (p != NULL) ;
             Blocks [blockid].p = p ;
             Blocks [blockid].p_size_allocated = size_allocated ;

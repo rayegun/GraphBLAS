@@ -122,7 +122,7 @@ GrB_Info GB_resize              // change the size of a matrix
             { 
                 // allocate new space for A->x; use calloc to ensure all space
                 // is initialized.
-                Ax_new = GB_CALLOC (nzmax_new*asize, GB_void, // x:OK:calloc
+                Ax_new = GB_CALLOCVEC(GB_void, nzmax_new*asize, A->type, // x:OK:calloc
                     &Ax_new_size) ;
                 ok = (Ax_new != NULL) ;
             }
@@ -135,7 +135,7 @@ GrB_Info GB_resize              // change the size of a matrix
         if (!in_place && A_is_bitmap)
         { 
             // allocate new space for A->b
-            Ab_new = GB_MALLOC (nzmax_new*asize, int8_t, &Ab_new_size) ;
+            Ab_new = GB_MALLOCVEC (int8_t, nzmax_new*asize, GrB_INT8, &Ab_new_size) ;
             ok = ok && (Ab_new != NULL) ;
         }
 

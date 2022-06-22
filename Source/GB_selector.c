@@ -694,7 +694,7 @@ GrB_Info GB_selector
 
     cnz = Cp [anvec] ;
     cnz = GB_IMAX (cnz, 1) ;
-    Ci = GB_MALLOC (cnz, int64_t, &Ci_size) ;
+    Ci = GB_MALLOCVEC (int64_t, cnz, GrB_INT64, &Ci_size) ;
     // use calloc since C is sparse, not bitmap
     Cx = (GB_void *) GB_XALLOC (false, C_iso, cnz, asize, &Cx_size) ; // x:OK
     if (Ci == NULL || Cx == NULL)
@@ -807,7 +807,7 @@ GrB_Info GB_selector
             // A and C are hypersparse: copy non-empty vectors from Ah to Ch
             //------------------------------------------------------------------
 
-            Ch = GB_MALLOC (anvec, int64_t, &Ch_size) ;
+            Ch = GB_MALLOCVEC (int64_t, anvec, GrB_INT64, &Ch_size) ;
             if (Ch == NULL)
             { 
                 // out of memory
