@@ -35,7 +35,7 @@ GrB_Info GB_convert_full_to_bitmap      // convert matrix from full to bitmap
     //--------------------------------------------------------------------------
 
     int64_t anz = GB_nnz_full (A) ;
-    A->b = GB_MALLOCVEC (int8_t, anz, GrB_INT8, &(A->b_size)) ;
+    A->b = GB_MALLOC (int8_t, anz, GrB_INT8, &(A->b_size)) ;
     if (A->b == NULL)
     { 
         // out of memory

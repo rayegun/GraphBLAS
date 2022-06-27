@@ -50,8 +50,8 @@ GrB_Info GB_convert_bitmap_to_sparse    // convert matrix from bitmap to sparse
     int64_t *restrict Ap = NULL ; size_t Ap_size = 0 ;
     int64_t *restrict Ai = NULL ; size_t Ai_size = 0 ;
     GB_void *restrict Ax = NULL ; size_t Ax_size = 0 ;
-    Ap = GB_MALLOCVEC (int64_t, avdim+1, GrB_INT64, &Ap_size) ; 
-    Ai = GB_MALLOCVEC (int64_t, anzmax, GrB_INT64, &Ai_size) ;
+    Ap = GB_MALLOC (int64_t, avdim+1, GrB_INT64, &Ap_size) ; 
+    Ai = GB_MALLOC (int64_t, anzmax, GrB_INT64, &Ai_size) ;
     if (Ap == NULL || Ai == NULL)
     { 
         // out of memory
@@ -75,7 +75,7 @@ GrB_Info GB_convert_bitmap_to_sparse    // convert matrix from bitmap to sparse
     {
         // A is not iso.  Allocate new space for Ax, which is filled by
         // GB_convert_bitmap_worker.
-        Ax = GB_MALLOCVEC (GB_void, anzmax * asize, A->type, &Ax_size) ;    // x:OK
+        Ax = GB_MALLOC (GB_void, anzmax * asize, A->type, &Ax_size) ;    // x:OK
         Ax_shallow = false ;
         if (Ax == NULL)
         { 

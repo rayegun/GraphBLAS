@@ -51,20 +51,20 @@ GrB_Info GB_bix_alloc       // allocate A->b, A->i, and A->x space in a matrix
         if (bitmap_calloc)
         { 
             // content is fully defined
-            A->b = GB_CALLOCVEC (int8_t, nzmax, GrB_INT8, &(A->b_size)) ;
+            A->b = GB_CALLOC (int8_t, nzmax, GrB_INT8, &(A->b_size)) ;
             A->magic = GB_MAGIC ;
         }
         else
         { 
             // bitmap is not defined and will be computed by the caller
-            A->b = GB_MALLOCVEC (int8_t, nzmax, GrB_INT8, &(A->b_size)) ;
+            A->b = GB_MALLOC (int8_t, nzmax, GrB_INT8, &(A->b_size)) ;
         }
         ok = (A->b != NULL) ;
     }
     else if (sparsity != GxB_FULL)
     { 
         // sparsity: sparse / hyper / auto 
-        A->i = GB_MALLOCVEC (int64_t, nzmax, GrB_INT64, &(A->i_size)) ;
+        A->i = GB_MALLOC (int64_t, nzmax, GrB_INT64, &(A->i_size)) ;
         ok = (A->i != NULL) ;
         if (ok) A->i [0] = 0 ;
     }

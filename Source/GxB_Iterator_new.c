@@ -14,7 +14,7 @@ GrB_Info GxB_Iterator_new (GxB_Iterator *iterator)
     GB_WHERE1 ("GxB_Iterator_new (&iterator)") ;
     GB_RETURN_IF_NULL (iterator) ;
     size_t header_size ;
-    (*iterator) = GB_CALLOC (1, struct GB_Iterator_opaque, &header_size) ;
+    (*iterator) = GB_CALLOC (struct GB_Iterator_opaque, sizeof(struct GB_Iterator_opaque), GrB_UINT8, &header_size) ;
     if (*iterator == NULL)
     { 
         // out of memory

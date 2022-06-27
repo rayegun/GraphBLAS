@@ -62,7 +62,7 @@ GrB_Info GxB_Type_new
 
     // allocate the type
     size_t header_size ;
-    (*type) = GB_MALLOCVEC (struct GB_Type_opaque, sizeof(struct GB_Type_opaque), GrB_UINT8, &header_size) ;
+    (*type) = GB_MALLOC (struct GB_Type_opaque, sizeof(struct GB_Type_opaque), GrB_UINT8, &header_size) ;
     if (*type == NULL)
     { 
         // out of memory

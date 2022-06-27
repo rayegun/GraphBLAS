@@ -470,7 +470,7 @@ GrB_Info GB_subref_phase0
 
     if (C_is_hyper)
     {
-        Ch = GB_MALLOCVEC (int64_t, Cnvec, GrB_INT64, &Ch_size) ;
+        Ch = GB_MALLOC (int64_t, Cnvec, GrB_INT64, &Ch_size) ;
         if (Ch == NULL)
         { 
             GB_FREE_WORKSPACE ;

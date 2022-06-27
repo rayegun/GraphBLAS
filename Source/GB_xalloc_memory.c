@@ -26,16 +26,15 @@ void *GB_xalloc_memory      // return the newly-allocated space
     if (iso)
     { 
         // always calloc the iso entry
-        p = GB_CALLOC (type_size, GB_void, size) ;  // x:OK
+        p = GB_MALLOC (GB_void, type_size, GrB_UINT8, size) ;  // x:OK
     }
     else if (use_calloc)
     { 
-        p = GB_CALLOC (n * type_size, GB_void, size) ; // x:OK
+        p = GB_MALLOC (GB_void, n * type_size, GrB_UINT8, size) ; // x:OK
     }
     else
     { 
-        p = GB_MALLOCVEC (GB_void, n * type_size, GrB_UINT8, size) ; // x:OK
+        p = GB_MALLOC (GB_void, n * type_size, GrB_UINT8, size) ; // x:OK
     }
     return (p) ;
 }
-

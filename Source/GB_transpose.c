@@ -369,8 +369,8 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
         ASSERT (info == GrB_SUCCESS) ;
 
         // allocate T->p, T->i, and optionally T->x, but not T->h
-        T->p = GB_MALLOCVEC (int64_t, anz+1, GrB_INT64, &(T->p_size)) ;
-        T->i = GB_MALLOCVEC (int64_t, anz  , GrB_INT64, &(T->i_size)) ;
+        T->p = GB_MALLOC (int64_t, anz+1, GrB_INT64, &(T->p_size)) ;
+        T->i = GB_MALLOC (int64_t, anz  , GrB_INT64, &(T->i_size)) ;
         bool allocate_Tx = (op != NULL || C_iso) || (ctype != atype) ;
         if (allocate_Tx)
         { 
@@ -500,11 +500,11 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
         T->iso = C_iso ;    // OK
 
         // allocate new space for the values and pattern
-        T->p = GB_CALLOCVEC (int64_t, 2, GrB_INT64, &(T->p_size)) ;
+        T->p = GB_CALLOC (int64_t, 2, GrB_INT64, &(T->p_size)) ;
         if (!A_is_hyper)
         { 
             // A is sparse, so new space is needed for T->i
-            T->i = GB_MALLOCVEC (int64_t, anz, GrB_INT64, &(T->i_size)) ;
+            T->i = GB_MALLOC (int64_t, anz, GrB_INT64, &(T->i_size)) ;
         }
         bool allocate_Tx = (op != NULL || C_iso) || (ctype != atype) ;
         if (allocate_Tx)
@@ -712,7 +712,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
             //------------------------------------------------------------------
 
             // allocate iwork of size anz
-            iwork = GB_MALLOCVEC (int64_t, anz, GrB_INT64, &iwork_size) ;
+            iwork = GB_MALLOC (int64_t, anz, GrB_INT64, &iwork_size) ;
             if (iwork == NULL)
             { 
                 // out of memory
@@ -754,7 +754,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
             if (!recycle_Ai)
             { 
                 // allocate jwork of size anz
-                jwork = GB_MALLOCVEC (int64_t, anz, GrB_INT64, &jwork_size) ;
+                jwork = GB_MALLOC (int64_t, anz, GrB_INT64, &jwork_size) ;
                 ok = ok && (jwork != NULL) ;
             }
 
@@ -962,12 +962,12 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
             if (GB_IS_BITMAP (C))
             { 
                 // calloc the space so the new C->x has no uninitialized space
-                Cx_new = GB_CALLOCVEC (GB_void, anz_held*csize, ctype, &Cx_size) ; // x:OK
+                Cx_new = GB_CALLOC (GB_void, anz_held*csize, ctype, &Cx_size) ; // x:OK
             }
             else
             { 
                 // malloc is fine; all C->x will be written
-                Cx_new = GB_MALLOCVEC (GB_void, anz_held*csize, ctype, &Cx_size) ; // x:OK
+                Cx_new = GB_MALLOC (GB_void, anz_held*csize, ctype, &Cx_size) ; // x:OK
             }
             if (Cx_new == NULL)
             { 

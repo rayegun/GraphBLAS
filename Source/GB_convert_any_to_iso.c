@@ -57,7 +57,7 @@ GrB_Info GB_convert_any_to_iso // convert non-iso matrix to iso
         }
 
         // allocate the new space
-        A->x = GB_MALLOCVEC (GB_void, asize, A->type, &(A->x_size)) ; // x:OK
+        A->x = GB_MALLOC (GB_void, asize, A->type, &(A->x_size)) ; // x:OK
         A->x_shallow = false ;
         if (A->x == NULL)
         { 

@@ -292,7 +292,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         // freed in GB_builder.
 
         ASSERT (J_work == NULL) ;
-        I_work = GB_MALLOCVEC (int64_t, nvals, GrB_INT64, I_work_size_handle) ;
+        I_work = GB_MALLOC (int64_t, nvals, GrB_INT64, I_work_size_handle) ;
         (*I_work_handle) = I_work ;
         ijslen = nvals ;
         if (I_work == NULL)
@@ -414,7 +414,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
             if (vdim > 1 && !known_sorted)
             {
                 // copy J_input into J_work, so the tuples can be sorted
-                J_work = GB_MALLOCVEC (int64_t, nvals, GrB_INT64, J_work_size_handle) ;
+                J_work = GB_MALLOC (int64_t, nvals, GrB_INT64, J_work_size_handle) ;
                 (*J_work_handle) = J_work ;
                 if (J_work == NULL)
                 { 
@@ -967,7 +967,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
     else
     {
         // duplicates exist, so allocate a new T->i.  I_work must be freed later
-        T->i = GB_MALLOCVEC (int64_t, tnz, GrB_INT64, &(T->i_size)) ;
+        T->i = GB_MALLOC (int64_t, tnz, GrB_INT64, &(T->i_size)) ;
         if (T->i == NULL)
         { 
             // out of memory

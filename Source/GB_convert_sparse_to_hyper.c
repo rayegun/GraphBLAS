@@ -102,8 +102,8 @@ GrB_Info GB_convert_sparse_to_hyper // convert from sparse to hypersparse
 
         int64_t *restrict Ap_new = NULL ; size_t Ap_new_size = 0 ;
         int64_t *restrict Ah_new = NULL ; size_t Ah_new_size = 0 ;
-        Ap_new = GB_MALLOCVEC (int64_t, nvec_nonempty+1, GrB_INT64, &Ap_new_size) ;
-        Ah_new = GB_MALLOCVEC (int64_t, nvec_nonempty  , GrB_INT64, &Ah_new_size) ;
+        Ap_new = GB_MALLOC (int64_t, nvec_nonempty+1, GrB_INT64, &Ap_new_size) ;
+        Ah_new = GB_MALLOC (int64_t, nvec_nonempty  , GrB_INT64, &Ah_new_size) ;
         if (Ap_new == NULL || Ah_new == NULL)
         { 
             // out of memory

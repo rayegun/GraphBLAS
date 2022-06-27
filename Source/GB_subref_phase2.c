@@ -59,7 +59,7 @@ GrB_Info GB_subref_phase2               // count nnz in each C(:,j)
     (*Cp_handle) = NULL ;
     (*Cp_size_handle) = 0 ;
     int64_t *restrict Cp = NULL ; size_t Cp_size = 0 ;
-    Cp = GB_CALLOCVEC (int64_t, GB_IMAX (2, Cnvec+1), GrB_INT64, &Cp_size) ;
+    Cp = GB_CALLOC (int64_t, GB_IMAX (2, Cnvec+1), GrB_INT64, &Cp_size) ;
     if (Cp == NULL)
     { 
         // out of memory

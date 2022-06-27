@@ -79,7 +79,7 @@ static inline bool GB_allocate_result
     bool ok = true ;
     if (Ch_handle != NULL)
     { 
-        (*Ch_handle) = GB_MALLOCVEC (int64_t, Cnvec, GrB_INT64, Ch_size_handle) ;
+        (*Ch_handle) = GB_MALLOC (int64_t, Cnvec, GrB_INT64, Ch_size_handle) ;
         ok = (*Ch_handle != NULL) ;
     }
     if (C_to_M_handle != NULL)

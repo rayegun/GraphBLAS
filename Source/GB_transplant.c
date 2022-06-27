@@ -121,14 +121,14 @@ GrB_Info GB_transplant          // transplant one matrix into another
     if (allocate_Cb)
     { 
         // allocate new C->b component
-        C->b = GB_MALLOCVEC (int8_t, anz, GrB_INT8, &(C->b_size)) ;
+        C->b = GB_MALLOC (int8_t, anz, GrB_INT8, &(C->b_size)) ;
         ok = ok && (C->b != NULL) ;
     }
 
     if (allocate_Ci)
     { 
         // allocate new C->i component
-        C->i = GB_MALLOCVEC (int64_t, anz, GrB_INT64, &(C->i_size)) ;
+        C->i = GB_MALLOC (int64_t, anz, GrB_INT64, &(C->i_size)) ;
         ok = ok && (C->i != NULL) ;
     }
 
@@ -218,8 +218,8 @@ GrB_Info GB_transplant          // transplant one matrix into another
             // A is hypersparse, create new C->p and C->h
             C->plen = anvec ;
             C->nvec = anvec ;
-            C->p = GB_MALLOCVEC (int64_t, C->plen+1, GrB_INT64, &(C->p_size)) ;
-            C->h = GB_MALLOCVEC (int64_t, C->plen  , GrB_INT64, &(C->h_size)) ;
+            C->p = GB_MALLOC (int64_t, C->plen+1, GrB_INT64, &(C->p_size)) ;
+            C->h = GB_MALLOC (int64_t, C->plen  , GrB_INT64, &(C->h_size)) ;
             if (C->p == NULL || C->h == NULL)
             { 
                 // out of memory
@@ -237,7 +237,7 @@ GrB_Info GB_transplant          // transplant one matrix into another
             // A is sparse, create new C->p
             C->plen = avdim ;
             C->nvec = avdim ;
-            C->p = GB_MALLOCVEC (int64_t, C->plen+1, GrB_INT64, &(C->p_size)) ;
+            C->p = GB_MALLOC (int64_t, C->plen+1, GrB_INT64, &(C->p_size)) ;
             if (C->p == NULL)
             { 
                 // out of memory

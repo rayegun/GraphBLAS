@@ -39,8 +39,8 @@ GrB_Info GB_convert_full_to_sparse      // convert matrix from full to sparse
     int64_t anz = GB_nnz_full (A) ;
     int64_t *restrict Ap = NULL ; size_t Ap_size = 0 ;
     int64_t *restrict Ai = NULL ; size_t Ai_size = 0 ;
-    Ap = GB_MALLOCVEC (int64_t, avdim+1, GrB_INT64, &Ap_size) ;
-    Ai = GB_MALLOCVEC (int64_t, anz, GrB_INT64, &Ai_size) ;
+    Ap = GB_MALLOC (int64_t, avdim+1, GrB_INT64, &Ap_size) ;
+    Ai = GB_MALLOC (int64_t, anz, GrB_INT64, &Ai_size) ;
     if (Ap == NULL || Ai == NULL)
     { 
         // out of memory

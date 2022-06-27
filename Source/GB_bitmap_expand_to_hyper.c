@@ -60,13 +60,13 @@ GrB_Info GB_bitmap_expand_to_hyper
     int64_t *restrict Ch = NULL ; size_t Ch_size = 0 ;
     int64_t *restrict Ci = NULL ; size_t Ci_size = 0 ;
 
-    Cp = GB_MALLOCVEC (int64_t, cvdim+1, GrB_INT64, &Cp_size) ;
+    Cp = GB_MALLOC (int64_t, cvdim+1, GrB_INT64, &Cp_size) ;
     Ch = NULL ;
     if (B_is_hyper)
     { 
-        Ch = GB_MALLOCVEC (int64_t, cvdim, GrB_INT64, &Ch_size) ;
+        Ch = GB_MALLOC (int64_t, cvdim, GrB_INT64, &Ch_size) ;
     }
-    Ci = GB_MALLOCVEC (int64_t, cnz, GrB_INT64, &Ci_size) ;
+    Ci = GB_MALLOC (int64_t, cnz, GrB_INT64, &Ci_size) ;
     if (Cp == NULL || (B_is_hyper && Ch == NULL) || Ci == NULL)
     { 
         // out of memory

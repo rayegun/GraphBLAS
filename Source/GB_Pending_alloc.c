@@ -32,7 +32,7 @@ bool GB_Pending_alloc       // create a list of pending tuples
     //--------------------------------------------------------------------------
 
     size_t header_size ;
-    GB_Pending Pending = GB_MALLOCVEC (struct GB_Pending_struct, sizeof(struct GB_Pending_struct), GrB_UINT8, &header_size) ;
+    GB_Pending Pending = GB_MALLOC (struct GB_Pending_struct, sizeof(struct GB_Pending_struct), GrB_UINT8, &header_size) ;
     if (Pending == NULL)
     { 
         // out of memory
@@ -55,16 +55,16 @@ bool GB_Pending_alloc       // create a list of pending tuples
     Pending->j_size = 0 ;
     Pending->x_size = 0 ;
 
-    Pending->i = GB_MALLOCVEC (int64_t, nmax, GrB_INT64, &(Pending->i_size)) ;
+    Pending->i = GB_MALLOC (int64_t, nmax, GrB_INT64, &(Pending->i_size)) ;
     Pending->j = NULL ;
     if (is_matrix)
     { 
-        Pending->j = GB_MALLOCVEC (int64_t, nmax, GrB_INT64, &(Pending->j_size)) ;
+        Pending->j = GB_MALLOC (int64_t, nmax, GrB_INT64, &(Pending->j_size)) ;
     }
     Pending->x = NULL ;
     if (!iso)
     { 
-        Pending->x = GB_MALLOCVEC ( GB_void, nmax * Pending->size, type,  // x:OK
+        Pending->x = GB_MALLOC ( GB_void, nmax * Pending->size, type,  // x:OK
             &(Pending->x_size)) ;
     }
 

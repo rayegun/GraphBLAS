@@ -44,7 +44,7 @@ GrB_Info GB_SelectOp_new            // create a new user-defined select operator
 
     // allocate the select operator
     size_t header_size ;
-    (*selectop) = GB_MALLOCVEC (struct GB_SelectOp_opaque, sizeof(struct GB_SelectOp_opaque), GrB_UINT8, &header_size) ;
+    (*selectop) = GB_MALLOC (struct GB_SelectOp_opaque, sizeof(struct GB_SelectOp_opaque), GrB_UINT8, &header_size) ;
     if (*selectop == NULL)
     { 
         // out of memory

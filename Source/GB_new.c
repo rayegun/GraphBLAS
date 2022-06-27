@@ -67,7 +67,7 @@ GrB_Info GB_new                 // create matrix, except for indices & values
     if ((*Ahandle) == NULL)
     {
         size_t header_size ;
-        (*Ahandle) = GB_MALLOCVEC (struct GB_Matrix_opaque, sizeof(struct GB_Matrix_opaque), GrB_UINT8, &header_size) ;
+        (*Ahandle) = GB_MALLOC (struct GB_Matrix_opaque, sizeof(struct GB_Matrix_opaque), GrB_UINT8, &header_size) ;
         if (*Ahandle == NULL)
         { 
             // out of memory
@@ -185,13 +185,13 @@ GrB_Info GB_new                 // create matrix, except for indices & values
     {
         // Sets the vector pointers to zero, which defines all vectors as empty
         A->magic = GB_MAGIC ;
-        A->p = GB_CALLOCVEC (int64_t, A->plen+1, GrB_INT64, &(A->p_size)) ;
+        A->p = GB_CALLOC (int64_t, A->plen+1, GrB_INT64, &(A->p_size)) ;
         ASSERT (A->p_size == GB_Global_memtable_size (A->p)) ;
         ok = (A->p != NULL) ;
         if (A_is_hyper)
         { 
             // since nvec is zero, there is never any need to initialize A->h
-            A->h = GB_MALLOCVEC (int64_t, A->plen, GrB_INT64, &(A->h_size)) ;
+            A->h = GB_MALLOC (int64_t, A->plen, GrB_INT64, &(A->h_size)) ;
             ok = ok && (A->h != NULL) ;
         }
     }
@@ -202,12 +202,12 @@ GrB_Info GB_new                 // create matrix, except for indices & values
         // caller must set A->p [0..plen] and then set A->magic to GB_MAGIC,
         // before returning the matrix to the user application.
         A->magic = GB_MAGIC2 ;
-        A->p = GB_MALLOCVEC (int64_t, A->plen+1, GrB_INT64, &(A->p_size)) ;
+        A->p = GB_MALLOC (int64_t, A->plen+1, GrB_INT64, &(A->p_size)) ;
         ASSERT (A->p_size == GB_Global_memtable_size (A->p)) ;
         ok = (A->p != NULL) ;
         if (A_is_hyper)
         { 
-            A->h = GB_MALLOCVEC (int64_t, A->plen, GrB_INT64, &(A->h_size)) ;
+            A->h = GB_MALLOC (int64_t, A->plen, GrB_INT64, &(A->h_size)) ;
             ok = ok && (A->h != NULL) ;
         }
     }
