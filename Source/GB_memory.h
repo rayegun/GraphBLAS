@@ -125,7 +125,7 @@ void GB_memset                  // parallel memset
     }
 
     #define GB_CALLOC(ptrtype, n,type,s) \
-        (ptrtype *) GB_calloc_memory (n, type->size, s) ; \
+        (ptrtype *) GB_calloc_memory (n, type->size, s, Context) ; \
         ; printf ("calloc  (%s, line %d): size %lu\n", \
             __FILE__, __LINE__, *(s)) ; \
 
