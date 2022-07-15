@@ -150,11 +150,15 @@ void GB_memset                  // parallel memset
     #define GB_FREE(p,s) \
         GB_dealloc_memory ((void **) p, s)
 
-    #define GB_CALLOC(ptrtype,n,type,s) \
-        (ptrtype *) GB_calloc_memory (n, type->size, s, Context)
+    #define GB_CALLOC(ptrtype, n,type,s) \
+        (ptrtype *) GB_calloc_memory (n, type->size, s, Context) ; \
+        ; printf ("calloc  (%s, line %d): size %lu\n", \
+            __FILE__, __LINE__, *(s)) ; \
 
-    #define GB_MALLOC(ptrtype,n,type,s) \
-        (ptrtype *) GB_malloc_memory (n, type->size, s)
+    #define GB_MALLOC(ptrtype, n,type,s) \
+        (ptrtype *) GB_malloc_memory (n, type->size, s) ; \
+        ; printf ("malloc  (%s, line %d): size %lu\n", \
+            __FILE__, __LINE__, *(s)) ; \
         
     #define GB_REALLOC(p,nnew,type,s,ok,Context) \
         p = (type *) GB_realloc_memory (nnew, sizeof (type), \
@@ -174,8 +178,8 @@ void GB_memset                  // parallel memset
 // tag the source code for the allocation of workspace differently from the
 // allocation of permament space for a GraphBLAS object, such as a GrB_Matrix.
 
-#define GB_CALLOC_WORK(n,type,s) GB_CALLOC(type,n,GrB_UINT8,s)
-#define GB_MALLOC_WORK(n,type,s) GB_MALLOC(type,n,GrB_UINT8,s)
+#define GB_CALLOC_WORK(n,type,s) GB_CALLOC(type,n * sizeof(type),GrB_UINT8,s)
+#define GB_MALLOC_WORK(n,type,s) GB_MALLOC(type,n * sizeof(type),GrB_UINT8,s)
 #define GB_REALLOC_WORK(p,nnew,type,s,ok,Context) \
              GB_REALLOC(p,nnew,type,s,ok,Context) 
 #define GB_FREE_WORK(p,s) GB_FREE(p,s)
