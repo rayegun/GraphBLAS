@@ -22,6 +22,7 @@ extern "C"
 
 #include "jitFactory.hpp"
 #include "GB_cuda_type_wrap.hpp"
+#include "test/GpuTimer.h"
 
 template<typename T, typename I>
 void print_array(void *arr, I size, const char *name) {
@@ -36,11 +37,12 @@ void print_array(void *arr, I size, const char *name) {
 #undef  GB_FREE_WORKSPACE
 #define GB_FREE_WORKSPACE                                               \
 {                                                                       \
-    if (Nanobuckets != NULL) rmm_wrap_free (Nanobuckets) ; Nanobuckets = NULL ; \
-    if (Blockbucket != NULL) rmm_wrap_free (Blockbucket) ; Blockbucket = NULL ; \
-    if (Bucket      != NULL) rmm_wrap_free (Bucket);       Bucket      = NULL ; \
-    if (Bucketp     != NULL) rmm_wrap_free (Bucketp);      Bucketp     = NULL ; \
-    if (offset      != NULL) rmm_wrap_free (offset);       offset      = NULL ; \
+    /* FIXME: use GB_FREE_WORK */                                       \
+    if (Nanobuckets != NULL) rmm_wrap_free (Nanobuckets) ; Nanobuckets = NULL ;\
+    if (Blockbucket != NULL) rmm_wrap_free (Blockbucket) ; Blockbucket = NULL ;\
+    if (Bucket      != NULL) rmm_wrap_free (Bucket);       Bucket      = NULL ;\
+    if (Bucketp     != NULL) rmm_wrap_free (Bucketp);      Bucketp     = NULL ;\
+    if (offset      != NULL) rmm_wrap_free (offset);       offset      = NULL ;\
 }
 
 #undef  GB_FREE_ALL
@@ -64,11 +66,14 @@ GrB_Info GB_AxB_dot3_cuda           // C<M> = A'*B using dot product method
 )
 {
 
+    cudaStream_t stream;
+    CHECK_CUDA_SIMPLE(cudaStreamCreate(&stream));
+
+    GpuTimer kernel_timer; 
+
     //--------------------------------------------------------------------------
     // check inputs
     //--------------------------------------------------------------------------
-
-    printf ("HERE IN cuda dot3, mask_struct is %d\n", Mask_struct) ;
 
     // when CUDA is enabled, no static headers are used in all of GraphBLAS
     GrB_Info info ;
@@ -148,9 +153,6 @@ GrB_Info GB_AxB_dot3_cuda           // C<M> = A'*B using dot product method
         cnz+1,  // add one to cnz for GB_cumsum of Cwork 
         true, C_iso, Context) ;
 
-    CHECK_CUDA_SIMPLE(cudaMemset(C->i, 0, (cnz+1) * sizeof(int64_t)));
-    CHECK_CUDA_SIMPLE(cudaMemset(C->x, 0, (cnz+1) * sizeof(ctype->size)));
-
     if (info != GrB_SUCCESS)
     { 
         // out of memory
@@ -158,32 +160,70 @@ GrB_Info GB_AxB_dot3_cuda           // C<M> = A'*B using dot product method
         return (info) ;
     }
 
-    //int64_t *Citemp =  C->i ;        
-    //auto *Cxtemp = C->x ;        
-    //cudaMalloc ((void**) &(C->i), cnz * sizeof( int64_t) ); 
-    //cudaMalloc ((void**) &(C->x), cnz * C->type->size ); 
-    CHECK_CUDA_SIMPLE(cudaMemAdvise( C->i, (cnz+1) * sizeof ( int64_t), cudaMemAdviseSetPreferredLocation, device));
-    CHECK_CUDA_SIMPLE(cudaMemAdvise( C->x, (cnz+1) * C->type->size , cudaMemAdviseSetPreferredLocation, device));
+    // FIXME: why set C->i and C->x to zero?
+//  CHECK_CUDA_SIMPLE(cudaMemsetAsync(C->i, 0, (cnz+1) * sizeof(int64_t),
+//      stream));
+//  if (!C_iso)
+//  {
+//      CHECK_CUDA_SIMPLE(cudaMemsetAsync(C->x, 0,
+//          (cnz+1) * sizeof(ctype->size), stream));
+//  }
 
+    CHECK_CUDA_SIMPLE(cudaMemAdvise( C->i, (cnz+1) * sizeof ( int64_t),
+        cudaMemAdviseSetPreferredLocation, device));
+    if (!C_iso)
+    {
+        CHECK_CUDA_SIMPLE(cudaMemAdvise( C->x, (cnz+1) * C->type->size ,
+            cudaMemAdviseSetPreferredLocation, device));
+    }
+
+    //--------------------------------------------------------------------------
+    // Pre-fetch arrays that will be used on the device
+    //--------------------------------------------------------------------------
+
+    // prefetch M
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->p, (mnvec+1) * sizeof (int64_t),
+        device, stream)) ; //stream_data) ;
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->i, mnz * sizeof (int64_t),
+        device, stream )) ; //stream_data) ;
+    if (!(Mask_struct || M->iso))
+    {
+        // prefetch M->x only if the mask is valued and M is non-iso
+        CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->x, mnz * M->type->size,
+            device, stream )) ; //stream_data) ;
+    }
+
+    // prefetch C
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( C->i, (cnz+1) * sizeof (int64_t),
+        device, stream )); //stream_data) ;
+    if (!C_iso)
+    {
+        // FIXME: why prefect C->x?
+        CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( C->x, (cnz+1) * C->type->size,
+            device, stream )); //stream_data) ;
+    }
 
     //--------------------------------------------------------------------------
     // copy Mp and Mh into C
     //--------------------------------------------------------------------------
 
-    CHECK_CUDA_SIMPLE(cudaMemcpy (C->p, M->p, (cnvec+1) * sizeof (int64_t), cudaMemcpyDefault)) ;
+    CHECK_CUDA_SIMPLE( cudaMemcpyAsync (C->p, M->p, (cnvec+1) * sizeof (int64_t),
+        cudaMemcpyDefault, stream)) ;
+    //memcpy( C->p, M->p, (cnvec+1)* sizeof( int64_t) );
     if (M_is_hyper)
     { 
-        // FIXME
-        CHECK_CUDA_SIMPLE(cudaMemcpy (C->h, M->h, cnvec * sizeof (int64_t), cudaMemcpyDefault)) ;
+        // FIXME: this method does not yet handle the hypersparse case
+        CHECK_CUDA_SIMPLE(cudaMemcpyAsync (C->h, M->h, cnvec * sizeof (int64_t),
+            cudaMemcpyDefault, stream)) ;
     }
 
     C->magic = GB_MAGIC ;
     C->nvec_nonempty = M->nvec_nonempty ;
-//    C->nvec = M->nvec ;
     // the dot3 CUDA kernel will produce C->i with jumbled indices
     C->jumbled = true ;
 
     GBURBLE ("(GPU C created and copied from M) ") ;
+
     //--------------------------------------------------------------------------
     // stringify the semiring and the mask
     //--------------------------------------------------------------------------
@@ -198,7 +238,8 @@ GrB_Info GB_AxB_dot3_cuda           // C<M> = A'*B using dot product method
     jit::GBJitCache filecache = jit::GBJitCache::Instance() ;
     filecache.getFile (my_mxm_spec) ;
 
-    GBURBLE ("(GPU stringified) ") ;
+    GBURBLE ("(GPU stringified srcode = %lu)\n", my_mxm_spec.sr_code) ;
+
     //--------------------------------------------------------------------------
     // construct the tasks for phase1 and phase2
     //--------------------------------------------------------------------------
@@ -218,124 +259,180 @@ GrB_Info GB_AxB_dot3_cuda           // C<M> = A'*B using dot product method
     int64_t nanobuckets_size = NBUCKETS * nthrd * ntasks;
     int64_t blockbuckets_size = NBUCKETS * ntasks;
 
-    Nanobuckets = (int64_t*)rmm_wrap_malloc(nanobuckets_size * sizeof (int64_t));
-    Blockbucket = (int64_t*)rmm_wrap_malloc(blockbuckets_size * sizeof (int64_t));
+    // FIXME: use GB_MALLOC_WORK which calls rmm_wrap_malloc anyway
+    Nanobuckets = (int64_t*)
+        rmm_wrap_malloc(nanobuckets_size * sizeof (int64_t));
+    Blockbucket = (int64_t*)
+        rmm_wrap_malloc(blockbuckets_size * sizeof (int64_t));
     Bucketp = (int64_t*)rmm_wrap_malloc((NBUCKETS+1) * sizeof (int64_t));
-    Bucket = (int64_t*)rmm_wrap_malloc(mnz * sizeof (int64_t));
     offset = (int64_t*)rmm_wrap_malloc(NBUCKETS * sizeof (int64_t));
+    Bucket = (int64_t*)rmm_wrap_malloc(mnz * sizeof (int64_t));
+    if (Nanobuckets == NULL || Blockbucket == NULL || Bucketp == NULL
+        || Bucket == NULL || offset == NULL)
+    {
+        // out of memory
+        GB_FREE_WORKSPACE ;
+        return (GrB_OUT_OF_MEMORY) ;
+    }
 
-    CHECK_CUDA_SIMPLE(cudaMemset(Nanobuckets, 0, nanobuckets_size * sizeof(int64_t)));
-    CHECK_CUDA_SIMPLE(cudaMemset(Blockbucket, 0, blockbuckets_size * sizeof(int64_t)));
-    CHECK_CUDA_SIMPLE(cudaMemset(Bucketp, 0, (NBUCKETS+1) * sizeof(int64_t)));
-    CHECK_CUDA_SIMPLE(cudaMemset(Bucket, 0, mnz * sizeof(int64_t)));
-    CHECK_CUDA_SIMPLE(cudaMemset(offset, 0, NBUCKETS * sizeof(int64_t)));
+    // fixme: do async with streams
+    // FIXME: do we need any of these?
+//  CHECK_CUDA_SIMPLE(cudaMemsetAsync(Nanobuckets, 0,
+//      nanobuckets_size * sizeof(int64_t), stream));
+//  CHECK_CUDA_SIMPLE(cudaMemsetAsync(Blockbucket, 0,
+//      blockbuckets_size * sizeof(int64_t), stream));
+    CHECK_CUDA_SIMPLE(cudaMemsetAsync(Bucketp, 0,
+        (NBUCKETS+1) * sizeof(int64_t), stream));
+    CHECK_CUDA_SIMPLE(cudaMemsetAsync(offset, 0,
+        NBUCKETS * sizeof(int64_t), stream));
+  //CHECK_CUDA_SIMPLE(cudaMemsetAsync(Bucket, 0,
+  //    mnz * sizeof(int64_t), stream));
 
     //--------------------------------------------------------------------------
     // phase1 and phase2: place each C(i,j) in a bucket
     //--------------------------------------------------------------------------
 
-    CHECK_CUDA_SIMPLE(cudaMemAdvise( Bucketp, (NBUCKETS+1) * sizeof ( int64_t), cudaMemAdviseSetPreferredLocation, cudaCpuDeviceId));
-    CHECK_CUDA_SIMPLE(cudaMemAdvise( Bucketp, (NBUCKETS+1) * sizeof ( int64_t), cudaMemAdviseSetAccessedBy, device));
+    CHECK_CUDA_SIMPLE(cudaMemAdvise( Bucketp, (NBUCKETS+1) * sizeof ( int64_t),
+        cudaMemAdviseSetPreferredLocation, cudaCpuDeviceId));
+    CHECK_CUDA_SIMPLE(cudaMemAdvise( Bucketp, (NBUCKETS+1) * sizeof ( int64_t),
+        cudaMemAdviseSetAccessedBy, device));
 
-    CHECK_CUDA_SIMPLE(cudaMemAdvise( offset, NBUCKETS * sizeof ( int64_t), cudaMemAdviseSetPreferredLocation, cudaCpuDeviceId));
-    CHECK_CUDA_SIMPLE(cudaMemAdvise( offset, NBUCKETS * sizeof ( int64_t), cudaMemAdviseSetAccessedBy, device));
+    CHECK_CUDA_SIMPLE(cudaMemAdvise( offset, NBUCKETS * sizeof ( int64_t),
+        cudaMemAdviseSetPreferredLocation, cudaCpuDeviceId));
+    CHECK_CUDA_SIMPLE(cudaMemAdvise( offset, NBUCKETS * sizeof ( int64_t),
+        cudaMemAdviseSetAccessedBy, device));
 
     //--------------------------------------------------------------------------
     // Pre-fetch arrays that will be used on the device
     //--------------------------------------------------------------------------
 
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->p, (mnvec+1) * sizeof (int64_t), device, NULL)) ; //stream_data) ;
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->i, mnz * sizeof (int64_t), device, NULL )) ; //stream_data) ;
-    // FIXME: if Mask_struct is true, skip this:
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->x, mnz * M->type->size, device, NULL )) ; //stream_data) ;
+    // prefetch M
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->p, (mnvec+1) * sizeof (int64_t),
+        device, stream)) ; //stream_data) ;
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->i, mnz * sizeof (int64_t),
+        device, stream )) ; //stream_data) ;
+    if (!(Mask_struct || M->iso))
+    {
+        // prefetch M->x only if the mask is valued and M is non-iso
+        CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( M->x, mnz * M->type->size,
+            device, stream )) ; //stream_data) ;
+    }
 
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( C->i, (cnz+1) * sizeof (int64_t), device, NULL )); //stream_data) ;
-    // FIXME: skip if C iso:
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( C->x, (cnz+1) * C->type->size, device, NULL )); //stream_data) ;
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( A->p, (anvec+1) * sizeof (int64_t), device, NULL)); // stream_data) ;
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( A->i, anz * sizeof (int64_t), device, NULL )) ; //stream_data) ;
-    // FIXME: skip if A iso:
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( A->x, anz * A->type->size, device, NULL )) ; //stream_data) ;
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( B->p, (bnvec+1) * sizeof (int64_t), device, NULL)); //stream_data) ;
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( B->i, bnz * sizeof (int64_t), device, NULL )); //stream_data) ;
-    // FIXME: skip if B iso:
-    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( B->x, bnz * B->type->size, device, NULL )); //stream_data) ;
+//  // prefetch C
+//  CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( C->i, (cnz+1) * sizeof (int64_t),
+//      device, stream )); //stream_data) ;
+//  if (!C_iso)
+//  {
+//      // FIXME: why prefect C->x?
+//      CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( C->x, (cnz+1) * C->type->size,
+//          device, stream )); //stream_data) ;
+//  }
+
+    //--------------------------------------------------------------------------
+    // Pre-fetch arrays that will be used on the device
+    //--------------------------------------------------------------------------
+
+    // prefetch A
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( A->p, (anvec+1) * sizeof (int64_t),
+        device, stream)); // stream_data) ;
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( A->i, anz * sizeof (int64_t),
+        device, stream )) ; //stream_data) ;
+    if (!A->iso)
+    {
+        CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( A->x, anz * A->type->size,
+            device, stream )) ; //stream_data) ;
+    }
+
+    // prefetch B
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( B->p, (bnvec+1) * sizeof (int64_t),
+        device, stream)); //stream_data) ;
+    CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( B->i, bnz * sizeof (int64_t),
+        device, stream )); //stream_data) ;
+    if (!B->iso)
+    {
+        CHECK_CUDA_SIMPLE(cudaMemPrefetchAsync( B->x, bnz * B->type->size,
+            device, stream )); //stream_data) ;
+    }
 
     // The work to compute C(i,j) is held in Ci [p], if C(i,j) appears in
     // as the pth entry in C.
     
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // phase1: assign each C(i,j) to a bucket, and count them
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
     GBURBLE ("(GPU phase1 start) ") ;
+    kernel_timer.Start();
+    p1lf.jitGridBlockLaunch(Nanobuckets, Blockbucket, C, M, A, B, stream);
+    CHECK_CUDA_SIMPLE(cudaStreamSynchronize(stream));
+    kernel_timer.Stop();
 
-    p1lf.jitGridBlockLaunch(Nanobuckets, Blockbucket, C, M, A, B);
+    GBURBLE ("(GPU phase1 done %12.6g ms )\n", kernel_timer.Elapsed()) ;
 
-    GBURBLE ("(GPU phase1 done) ") ;
-
-    //print_array<int64_t>(Nanobuckets, nanobuckets_size, "Nanobuckets");
-    printf(" using %ld blockbuckets \n", blockbuckets_size); 
-    //print_array<int64_t>(Blockbucket, blockbuckets_size , "Blockbucket");
-
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // phase2: cumsum across the blockbuckets, propagate to thread level
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
-    GBURBLE ("(GPU phase1 start) ") ;
+    GBURBLE ("(GPU phase2 start nblk=%d ) ", ntasks) ;
 
-    p2lf.jitGridBlockLaunch(Blockbucket, offset, M );
+    kernel_timer.Start();
+    p2lf.jitGridBlockLaunch(Blockbucket, offset, M, stream);
+    kernel_timer.Stop();
+
+    CHECK_CUDA_SIMPLE(cudaStreamSynchronize(stream));
 
     int64_t s= offset[0];
     C->nzombies = s;
+    bool all_in_one = false;
     for ( int bucket = 1 ; bucket < NBUCKETS+1; ++bucket)
     {
         Bucketp[bucket] = s; 
         s+= offset[bucket];
-        printf("bucketp[%d] = %ld, offset=%ld\n", bucket, Bucketp[bucket], offset[bucket]);
+        if ( (Bucketp[bucket] - Bucketp[bucket-1] ) == mnz ) all_in_one = true;
     }
 
-    GBURBLE ("(GPU phase2 done) ") ;
+    GBURBLE ("(GPU phase2 done %12.6g ms )\n", kernel_timer.Elapsed()) ;
 
-    GBURBLE ("(GPU phase2end start) ") ;
+    if( !all_in_one) 
+    {
+        GBURBLE ("(GPU phase2end start nblk=%d) ",  ntasks) ;
 
-    p2elf.jitGridBlockLaunch(Nanobuckets, Blockbucket,
-                             Bucketp, Bucket, offset, C, M);
+        kernel_timer.Start();
+        p2elf.jitGridBlockLaunch(Nanobuckets, Blockbucket,
+                                 Bucketp, Bucket, offset, C, M, stream);
 
-    GBURBLE ("(GPU phase2end done) ") ;
+        CHECK_CUDA_SIMPLE(cudaStreamSynchronize(stream));
+        kernel_timer.Stop();
+        GBURBLE ("(GPU phase2end done %12.6g ms)\n",kernel_timer.Elapsed()) ;
+    }
 
-    //print_array<int64_t>(Bucket, mnz , "Bucket");
-    //print_array<int64_t>(M->i, mnz , "M->i");
-    //print_array<int64_t>(C->i, mnz , "C->i");
-
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // phase3: do the numerical work
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
-    print_array<int64_t>(Bucketp, NBUCKETS + 1 , "Bucketp");
-    printf("pre-phase3 kernel C->nzombies=%ld\n", C->nzombies);
 
     for ( int bucket = 1 ; bucket < NBUCKETS; ++bucket)
     {
         int64_t start = Bucketp[bucket];
         int64_t end   = Bucketp[bucket + 1 ];
+      //int64_t start = 0;
+      //int64_t end   = cnz;
 
         if(end - start > 0) {
-            printf("Executing bucket: %d with %ld edges\n", bucket, end-start);
-            // TODO: We might want to consider submitting these in different cuda streams (maybe use cuda stream pool?)
+            // TODO: Use stream pool
             phase3launchFactory p3lf(my_mxm_spec, (GB_bucket_code)bucket);
-            p3lf.jitGridBlockLaunch(start, end, Bucketp, Bucket, C, M, A, B);
-        } else {
-            printf("Skipping bucket %d, no work to do\n", bucket);
-        }
-
-        GBURBLE ("(GPU phase3 done ) ") ;
+            GBURBLE ("(GPU phase3 bucket %d launch ) ", bucket) ;
+            kernel_timer.Start();
+            p3lf.jitGridBlockLaunch(start, end, Bucketp, Bucket, C, M, A, B, stream);
+            CHECK_CUDA_SIMPLE(cudaStreamSynchronize(stream));  // only for timing
+            kernel_timer.Stop();
+            GBURBLE ("(GPU phase3 bucket %d done %12.6g ms)\n", bucket, kernel_timer.Elapsed()) ; }
     }
-    //printf("C->p[0]=%ld\n", C->p[0]);
-    //printf("C->p[1]=%ld\n", C->p[1]);
-    printf("C->nzombies=%ld\n", C->nzombies);
 
     GB_FREE_WORKSPACE ;
+
+    CHECK_CUDA_SIMPLE(cudaStreamSynchronize(stream));
+    CHECK_CUDA_SIMPLE(cudaStreamDestroy(stream));
     return GrB_SUCCESS; 
 }
 

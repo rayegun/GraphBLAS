@@ -15,6 +15,27 @@
 //  matrix<T_B> *B         <- B matrix to multiply, dense in sparse format? 
 //  int sz                 <- size hint for smaller vector
 //******************************************************************************
+
+/* fixme: This kernel needs to be split into 4 methods.  Perhaps a single
+    file with #ifdef's could be used to keep the code size down.
+
+        (A sparse or hypersparse) * (B bitmap)
+        (A sparse or hypersparse) * (B full)
+        (A bitmap) * (B sparse or hypersparse)
+        (A full) * (B sparse or hypersparse)
+
+    The buckets are not needed, unless the sparse matrix needs to be
+    split into "very sparse vectors" (one thread per dot) and "longer
+    sparse vectors" (one warp or threadblock cooperates on a single dot).
+    Then only 2 buckets are needed ... or the work could be done in a single
+    pass, and the test for these 2 cases could be done on the fly.
+
+    The buckets are entirely different from the general case when both A and
+    B are sparse.
+
+    C and M would still be sparse or hypersparse.
+*/
+
 #pragma once
 
 #include <limits>
@@ -61,7 +82,12 @@ __global__ void AxB_dot3_phase3_spdn
   int sz 
 )
 {
-   const T_A *__restrict__ Ax = (T_A *)A->x  ;
+    // TODO: Figure out how to use graphblas-specific INFINITY macro
+    #ifndef INFINITY
+    #define INFINITY std::numeric_limits<T_C>::max()
+    #endif
+
+    const T_A *__restrict__ Ax = (T_A *)A->x  ;
    const T_B *__restrict__ Bx = (T_B *)B->x  ;
          T_C *__restrict__ Cx = (T_C *)C->x  ;
          int64_t *__restrict__ Ci = C->i ;
@@ -119,7 +145,7 @@ __global__ void AxB_dot3_phase3_spdn
           int64_t nnzB   = pB_end - pB;
           GB_DECLAREA (aki) ;
           GB_DECLAREB (bkj) ;
-          T_Z cij;
+          T_Z cij = GB_IDENTITY ;
 
           int zombie_count = 0;
 
