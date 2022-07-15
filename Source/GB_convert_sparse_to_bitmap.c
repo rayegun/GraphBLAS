@@ -104,7 +104,7 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
         // A->x must be modified to fit the bitmap structure.  A->x is calloc'd
         // since otherwise it would contain uninitialized values where A->b is
         // false and entries are not present.
-        Ax_new = GB_CALLOC (GB_void, anzmax * asize, A->type, &Ax_size) ; // x:OK:calloc
+        Ax_new = GB_CALLOC (GB_void, anzmax, A->type, &Ax_size) ; // x:OK:calloc
         Ax_shallow = false ;
         if (Ax_new == NULL)
         { 
