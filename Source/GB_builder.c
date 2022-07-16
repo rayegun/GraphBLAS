@@ -1143,7 +1143,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         { 
             // shrink the size of T->x
             bool ok = true ;
-            GB_REALLOC (T->x, GB_void, tx_size_required, GrB_UINT8, &(T->x_size), &ok,
+            GB_REALLOC (T->x, GB_void, tx_size_required, T->type, &(T->x_size), &ok,
                 Context) ;
         }
 
@@ -1155,7 +1155,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         // allocate T->x
         //----------------------------------------------------------------------
 
-        T->x = GB_XALLOC (false, S_iso, tnz, tsize, &(T->x_size)) ; // x:OK
+        T->x = GB_XALLOC (false, S_iso, tnz, T->type, &(T->x_size)) ; // x:OK
         if (T->x == NULL)
         { 
             // out of memory

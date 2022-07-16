@@ -375,7 +375,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
         if (allocate_Tx)
         { 
             // allocate new space for the new typecasted numerical values of T
-            T->x = GB_XALLOC (false, C_iso, anz, csize, &(T->x_size)) ; // x:OK
+            T->x = GB_XALLOC (false, C_iso, anz, ctype, &(T->x_size)) ; // x:OK
         }
         if (T->p == NULL || T->i == NULL || (allocate_Tx && T->x == NULL))
         { 
@@ -510,7 +510,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
         if (allocate_Tx)
         { 
             // allocate new space for the new typecasted numerical values of T
-            T->x = GB_XALLOC (false, C_iso, anz, csize, &(T->x_size)) ; // x:OK
+            T->x = GB_XALLOC (false, C_iso, anz, ctype, &(T->x_size)) ; // x:OK
         }
 
         if (T->p == NULL || (T->i == NULL && !A_is_hyper) ||
@@ -761,7 +761,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
             if (op != NULL && !C_iso)
             { 
                 Swork = (GB_void *) GB_XALLOC (false, C_iso, anz,   // x:OK
-                    csize, &Swork_size) ;
+                    ctype, &Swork_size) ;
                 ok = ok && (Swork != NULL) ;
             }
 

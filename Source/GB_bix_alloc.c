@@ -73,7 +73,7 @@ GrB_Info GB_bix_alloc       // allocate A->b, A->i, and A->x space in a matrix
     { 
         // calloc the space if A is bitmap
         A->x = GB_XALLOC (sparsity == GxB_BITMAP, A_iso,    // x:OK
-            nzmax, A->type->size, &(A->x_size)) ;
+            nzmax, A->type, &(A->x_size)) ;
         ok = ok && (A->x != NULL) ;
     }
 

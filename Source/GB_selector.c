@@ -696,7 +696,7 @@ GrB_Info GB_selector
     cnz = GB_IMAX (cnz, 1) ;
     Ci = GB_MALLOC (int64_t, cnz, GrB_INT64, &Ci_size) ;
     // use calloc since C is sparse, not bitmap
-    Cx = (GB_void *) GB_XALLOC (false, C_iso, cnz, asize, &Cx_size) ; // x:OK
+    Cx = (GB_void *) GB_XALLOC (false, C_iso, cnz, A->type, &Cx_size) ; // x:OK
     if (Ci == NULL || Cx == NULL)
     { 
         // out of memory

@@ -16,7 +16,7 @@ void *GB_xalloc_memory      // return the newly-allocated space
     bool use_calloc,        // if true, use calloc
     bool iso,               // if true, only allocate a single entry
     int64_t n,              // # of entries to allocate if non iso
-    size_t type_size,       // size of each entry
+    GrB_Type type,       // size of each entry
     // output
     size_t *size,           // resulting size
     GB_Context Context
@@ -26,15 +26,15 @@ void *GB_xalloc_memory      // return the newly-allocated space
     if (iso)
     { 
         // always calloc the iso entry
-        p = GB_MALLOC (GB_void, type_size, GrB_UINT8, size) ;  // x:OK
+        p = GB_MALLOC (GB_void, 1, type, size) ;  // x:OK
     }
     else if (use_calloc)
     { 
-        p = GB_MALLOC (GB_void, n * type_size, GrB_UINT8, size) ; // x:OK
+        p = GB_MALLOC (GB_void, n, type, size) ; // x:OK
     }
     else
     { 
-        p = GB_MALLOC (GB_void, n * type_size, GrB_UINT8, size) ; // x:OK
+        p = GB_MALLOC (GB_void, n, type, size) ; // x:OK
     }
     return (p) ;
 }
