@@ -56,17 +56,16 @@ GrB_Info GB_ix_realloc      // reallocate space in a matrix
 
     size_t nzmax_new1 = GB_IMAX (nzmax_new, 1) ;
     bool ok1 = true, ok2 = true ;
-    GB_REALLOC (A->i, nzmax_new1, int64_t, &(A->i_size), &ok1, Context) ;
-    size_t asize = A->type->size ;
+    GB_REALLOC (A->i, int64_t, nzmax_new1, GrB_INT64, &(A->i_size), &ok1, Context) ;
     if (A->iso)
     { 
         // shrink A->x so it holds a single entry
-        GB_REALLOC (A->x, asize, GB_void, &(A->x_size), &ok2, Context) ;
+        GB_REALLOC (A->x, GB_void, 1, A->type, &(A->x_size), &ok2, Context) ;
     }
     else
     { 
         // reallocate A->x from its current size to nzmax_new1 entries
-        GB_REALLOC (A->x, nzmax_new1*asize, GB_void, &(A->x_size), &ok2,
+        GB_REALLOC (A->x, GB_void, nzmax_new1, A->type, &(A->x_size), &ok2,
             Context) ;
     }
     bool ok = ok1 && ok2 ;

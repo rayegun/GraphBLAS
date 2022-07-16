@@ -955,7 +955,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         { 
             // this cannot fail since the size is shrinking.
             bool ok ;
-            GB_REALLOC (I_work, tnz, int64_t, I_work_size_handle, &ok, Context);
+            GB_REALLOC (I_work, int64_t, tnz, GrB_INT64, I_work_size_handle, &ok, Context);
             ASSERT (ok) ;
         }
         // transplant I_work into T->i
@@ -1143,7 +1143,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         { 
             // shrink the size of T->x
             bool ok = true ;
-            GB_REALLOC (T->x, tx_size_required, GB_void, &(T->x_size), &ok,
+            GB_REALLOC (T->x, GB_void, tx_size_required, GrB_UINT8, &(T->x_size), &ok,
                 Context) ;
         }
 

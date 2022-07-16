@@ -150,14 +150,14 @@ void GB_memset                  // parallel memset
     #define GB_FREE(p,s) \
         GB_dealloc_memory ((void **) p, s)
 
-    #define GB_CALLOC(ptrtype, n,type,s) \
+    #define GB_CALLOC(ptrtype,n,type,s) \
         (ptrtype *) GB_calloc_memory (n, type->size, s, Context)
 
-    #define GB_MALLOC(ptrtype, n,type,s) \
+    #define GB_MALLOC(ptrtype,n,type,s) \
         (ptrtype *) GB_malloc_memory (n, type->size, s)
         
-    #define GB_REALLOC(p,nnew,type,s,ok,Context) \
-        p = (type *) GB_realloc_memory (nnew, sizeof (type), \
+    #define GB_REALLOC(p,ptrtype,nnew,type,s,ok,Context) \
+        p = (ptrtype *) GB_realloc_memory (nnew, sizeof (type), \
             (void *) p, s, ok, Context)
 
     #define GB_XALLOC(use_calloc,iso,n,type_size,s) \
@@ -177,7 +177,7 @@ void GB_memset                  // parallel memset
 #define GB_CALLOC_WORK(n,type,s) GB_CALLOC(type,(n) * sizeof(type),GrB_UINT8,s)
 #define GB_MALLOC_WORK(n,type,s) GB_MALLOC(type,(n) * sizeof(type),GrB_UINT8,s)
 #define GB_REALLOC_WORK(p,nnew,type,s,ok,Context) \
-             GB_REALLOC(p,nnew,type,s,ok,Context) 
+             GB_REALLOC(p,type,(nnew) * sizeof(type),GrB_UINT8,s,ok,Context) 
 #define GB_FREE_WORK(p,s) GB_FREE(p,s)
 
 #endif

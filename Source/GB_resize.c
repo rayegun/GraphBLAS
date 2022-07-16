@@ -115,7 +115,7 @@ GrB_Info GB_resize              // change the size of a matrix
             if (in_place)
             { 
                 // reallocate A->x in-place; no data movement needed
-                GB_REALLOC (A->x, nzmax_new*asize, GB_void, &(A->x_size), &ok,
+                GB_REALLOC (A->x, GB_void, nzmax_new, A->type, &(A->x_size), &ok,
                     Context) ;
             }
             else
