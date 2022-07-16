@@ -372,7 +372,11 @@ GrB_Info GxB_init           // start up GraphBLAS and also define malloc, etc
     GrB_Mode mode,          // blocking or non-blocking mode,
                             // with or without GPU
     // pointers to memory management functions
-    void * (* user_malloc_function  ) (size_t),
+    #ifdef GBJULIA
+    void * (* user_malloc_function  ) (size_t, GrB_Type), // required
+    #else
+    void * (* user_malloc_function  ) (size_t), // required
+    #endif
     void * (* user_calloc_function  ) (size_t, size_t),
     void * (* user_realloc_function ) (void *, size_t),
     void   (* user_free_function    ) (void *)

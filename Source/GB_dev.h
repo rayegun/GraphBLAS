@@ -10,6 +10,7 @@
 #ifndef GB_DEV_H
 #define GB_DEV_H
 
+//#define GB_JULIA
 //------------------------------------------------------------------------------
 // code development settings: by default, all settings should be commented out
 //------------------------------------------------------------------------------

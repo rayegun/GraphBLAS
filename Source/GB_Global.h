@@ -50,10 +50,15 @@ GB_PUBLIC void     GB_Global_bitmap_switch_default (void) ;
 GB_PUBLIC void     GB_Global_abort_function_set
                         (void (* abort_function) (void)) ;
 GB_PUBLIC void     GB_Global_abort_function (void) ;
-
+#ifdef GBJULIA
+          void     GB_Global_malloc_function_set
+                        (void * (* malloc_function) (size_t, GrB_Type)) ;
+          void  *  GB_Global_malloc_function (size_t nitems, GrB_Type type) ;
+#else
           void     GB_Global_malloc_function_set
                         (void * (* malloc_function) (size_t)) ;
           void  *  GB_Global_malloc_function (size_t size) ;
+#endif
           void     GB_Global_realloc_function_set
                         (void * (* realloc_function) (void *, size_t)) ;
           void  *  GB_Global_realloc_function (void *p, size_t size) ;

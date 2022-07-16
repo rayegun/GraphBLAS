@@ -40,8 +40,12 @@ GrB_Info GB_init            // start up GraphBLAS
 (
     const GrB_Mode mode,    // blocking or non-blocking mode
 
-    // pointers to memory management functions.
-    void * (* malloc_function  ) (size_t),          // required
+    // pointers to memory management functions
+    #ifdef GBJULIA
+    void * (* malloc_function  ) (size_t, GrB_Type), // required
+    #else
+    void * (* malloc_function  ) (size_t), // required
+    #endif
     void * (* realloc_function ) (void *, size_t),  // optional, can be NULL
     void   (* free_function    ) (void *),          // required
 

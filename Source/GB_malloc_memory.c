@@ -18,8 +18,10 @@
 static inline void *GB_malloc_helper
 (
     // input/output:
-    size_t *size            // on input: # of bytes requested
+    size_t *size,            // on input: # of bytes requested
                             // on output: # of bytes actually allocated
+    size_t nitems,
+    GrB_Type type
 )
 {
     void *p = NULL ;
@@ -42,7 +44,11 @@ static inline void *GB_malloc_helper
     if (p == NULL)
     {
         // no block in the free_pool, so allocate it
-        p = GB_Global_malloc_function (*size) ;
+        #ifdef GBJULIA
+            p = GB_Global_malloc_function (*nitems, type) ;
+        #else
+            p = GB_Global_malloc_function (*size) ;
+        #endif
 
         #ifdef GB_MEMDUMP
         printf ("hard malloc %p %ld\n", p, *size) ;
@@ -73,7 +79,7 @@ void *GB_malloc_memory      // pointer to allocated block of memory
     // check inputs
     //--------------------------------------------------------------------------
     size_t size_of_item = type->size ;
-    
+
     ASSERT (size_allocated != NULL) ;
 
     void *p ;
@@ -117,8 +123,8 @@ void *GB_malloc_memory      // pointer to allocated block of memory
             p = NULL ;
         }
         else
-        { 
-            p = GB_malloc_helper (&size) ;
+        {
+            p = GB_malloc_helper (&size, nitems, type) ;
         }
 
     }
@@ -128,14 +134,15 @@ void *GB_malloc_memory      // pointer to allocated block of memory
         //----------------------------------------------------------------------
         // normal use, in production
         //----------------------------------------------------------------------
-
-        p = GB_malloc_helper (&size) ;
+        p = GB_malloc_helper (&size, nitems, type) ;
     }
 
     //--------------------------------------------------------------------------
     // return result
     //--------------------------------------------------------------------------
-
+    #ifdef GBJULIA
+        size = nitems * type->size
+    #endif
     (*size_allocated) = (p == NULL) ? 0 : size ;
     ASSERT (GB_IMPLIES (p != NULL, size == GB_Global_memtable_size (p))) ;
     return (p) ;

@@ -57,8 +57,12 @@ typedef struct
 
     // All threads must use the same malloc/realloc/free functions.
     // They default to the ANSI C11 functions, but can be defined by GxB_init.
-
+    #ifdef GBJULIA
+    void * (* malloc_function ) (size_t, GrB_Type);
+    #else
     void * (* malloc_function  ) (size_t)         ;     // required
+    #endif
+    
     void * (* realloc_function ) (void *, size_t) ;     // may be NULL
     void   (* free_function    ) (void *)         ;     // required
     bool malloc_is_thread_safe ;   // default is true
@@ -201,7 +205,11 @@ GB_Global_struct GB_Global =
     .abort_function   = abort,
 
     // malloc/realloc/free functions: default to ANSI C11 functions
+    #ifdef GBJULIA
+    .malloc_function = NULL,
+    #else
     .malloc_function  = malloc,
+    #endif
     .realloc_function = realloc,
     .free_function    = free,
     .malloc_is_thread_safe = true,
@@ -350,6 +358,12 @@ GB_Global_struct GB_Global =
 
 } ;
 
+GB_PUBLIC bool forJulia =
+#ifdef GBJULIA
+true ;
+#else
+false ;
+#endif
 //==============================================================================
 // GB_Global access functions
 //==============================================================================
@@ -783,6 +797,33 @@ void GB_Global_memtable_remove (void *p)
 // malloc_function
 //------------------------------------------------------------------------------
 
+#ifdef GBJULIA
+
+void GB_Global_malloc_function_set
+    (void * (* malloc_function) (size_t, GrB_Type))
+{ 
+    GB_Global.malloc_function = malloc_function ;
+}
+
+void * GB_Global_malloc_function (size_t nitems, GrB_Type type)
+{ 
+    void *p = NULL ;
+    if (GB_Global.malloc_is_thread_safe)
+    {
+        p = GB_Global.malloc_function (nitems, type) ;
+    }
+    else
+    {
+        #pragma omp critical(GB_malloc_protection)
+        {
+            p = GB_Global.malloc_function (nitems, type) ;
+        }
+    }
+    GB_Global_memtable_add (p, nitems * type->size) ;
+    return (p) ;
+}
+#else
+
 void GB_Global_malloc_function_set (void * (* malloc_function) (size_t))
 { 
     GB_Global.malloc_function = malloc_function ;
@@ -805,6 +846,7 @@ void * GB_Global_malloc_function (size_t size)
     GB_Global_memtable_add (p, size) ;
     return (p) ;
 }
+#endif
 
 //------------------------------------------------------------------------------
 // realloc_function
