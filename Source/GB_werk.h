@@ -87,7 +87,8 @@ static inline void *GB_werk_push    // return pointer to newly allocated space
     else
     { 
         // allocate the werkspace from malloc
-        return (GB_malloc_memory (nitems, size_of_item, size_allocated)) ;
+        // TODO: BETTER, use type info from further up the stack.
+        return (GB_malloc_memory (nitems * size_of_item, GrB_UINT8, size_allocated)) ;
     }
 }
 

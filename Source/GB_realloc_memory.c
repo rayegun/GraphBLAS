@@ -45,7 +45,7 @@ void *GB_realloc_memory     // pointer to reallocated block of memory, or
                             // to original block if the reallocation failed.
 (
     size_t nitems_new,      // new number of items in the object
-    size_t size_of_item,    // size of each item
+    GrB_Type type,    // size of each item
     // input/output
     void *p,                // old object to reallocate
     size_t *size_allocated, // # of bytes actually allocated
@@ -55,13 +55,14 @@ void *GB_realloc_memory     // pointer to reallocated block of memory, or
 )
 {
 
+    size_t size_of_item = type->size ;
     //--------------------------------------------------------------------------
     // malloc a new block if p is NULL on input
     //--------------------------------------------------------------------------
 
     if (p == NULL)
     { 
-        p = GB_malloc_memory (nitems_new, size_of_item, size_allocated) ;
+        p = GB_malloc_memory (nitems_new, type, size_allocated) ;
         (*ok) = (p != NULL) ;
         return (p) ;
     }
@@ -127,7 +128,7 @@ void *GB_realloc_memory     // pointer to reallocated block of memory, or
         // from the free_pool if one exists of that size.
 
         // allocate the new space
-        pnew = GB_malloc_memory (nitems_new, size_of_item, &newsize_allocated) ;
+        pnew = GB_malloc_memory (nitems_new, type, &newsize_allocated) ;
         // copy over the data from the old block to the new block
         if (pnew != NULL)
         { 

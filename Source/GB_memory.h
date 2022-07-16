@@ -26,7 +26,7 @@ GB_PUBLIC
 void *GB_calloc_memory      // pointer to allocated block of memory
 (
     size_t nitems,          // number of items to allocate
-    size_t size_of_item,    // sizeof each item
+    GrB_Type type,    // sizeof each item
     // output
     size_t *size_allocated, // # of bytes actually allocated
     GB_Context Context
@@ -36,7 +36,7 @@ GB_PUBLIC
 void *GB_malloc_memory      // pointer to allocated block of memory
 (
     size_t nitems,          // number of items to allocate
-    size_t size_of_item,    // sizeof each item
+    GrB_Type type,    // sizeof each item
     // output
     size_t *size_allocated  // # of bytes actually allocated
 ) ;
@@ -46,7 +46,7 @@ void *GB_realloc_memory     // pointer to reallocated block of memory, or
                             // to original block if the realloc failed.
 (
     size_t nitems_new,      // new number of items in the object
-    size_t size_of_item,    // sizeof each item
+    GrB_Type type,    // sizeof each item
     // input/output
     void *p,                // old object to reallocate
     // output
@@ -151,13 +151,13 @@ void GB_memset                  // parallel memset
         GB_dealloc_memory ((void **) p, s)
 
     #define GB_CALLOC(ptrtype,n,type,s) \
-        (ptrtype *) GB_calloc_memory (n, type->size, s, Context)
+        (ptrtype *) GB_calloc_memory (n, type, s, Context)
 
     #define GB_MALLOC(ptrtype,n,type,s) \
-        (ptrtype *) GB_malloc_memory (n, type->size, s)
+        (ptrtype *) GB_malloc_memory (n, type, s)
         
     #define GB_REALLOC(p,ptrtype,nnew,type,s,ok,Context) \
-        p = (ptrtype *) GB_realloc_memory (nnew, sizeof (type), \
+        p = (ptrtype *) GB_realloc_memory (nnew, type, \
             (void *) p, s, ok, Context)
 
     #define GB_XALLOC(use_calloc,iso,n,type,s) \

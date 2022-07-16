@@ -24,7 +24,7 @@ bool GB_cuda_warmup (int device)
     double gpu_memory_size = GB_Global_gpu_memorysize_get (device);
 
     size_t size = 0 ;
-    void *p = GB_malloc_memory (1, 1, &size) ;
+    void *p = GB_malloc_memory (1, GrB_UINT8, &size) ;
     if (p == NULL)
     {
         printf ("Hey!! where's da memory???\n") ;

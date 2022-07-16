@@ -73,13 +73,14 @@ GB_PUBLIC
 void *GB_calloc_memory      // pointer to allocated block of memory
 (
     size_t nitems,          // number of items to allocate
-    size_t size_of_item,    // sizeof each item
+    GrB_Type type,    // sizeof each item
     // output
     size_t *size_allocated, // # of bytes actually allocated
     GB_Context Context
 )
 {
 
+    size_t size_of_item = type->size ;
     //--------------------------------------------------------------------------
     // check inputs
     //--------------------------------------------------------------------------

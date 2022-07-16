@@ -122,7 +122,7 @@ mxArray *GB_mx_object_to_mxArray   // returns the built-in mxArray
     {
         ASSERT (cnz == 0) ;
         C->x = (GB_void *) GB_malloc_memory (2 * sizeof (double),
-            sizeof (GB_void), &(C->x_size)) ;
+            GrB_UINT8, &(C->x_size)) ;
         memset (C->x, 0, 2 * sizeof (double)) ;
         C->x_shallow = false ;
     }
@@ -134,7 +134,7 @@ mxArray *GB_mx_object_to_mxArray   // returns the built-in mxArray
         if (C->i == NULL)
         {
             ASSERT (cnz == 0) ;
-            C->i = (int64_t *) GB_malloc_memory (1, sizeof (int64_t),
+            C->i = (int64_t *) GB_malloc_memory (1, GrB_INT64,
                 &(C->i_size)) ;
             C->i [0] = 0 ;
             C->i_shallow = false ;
@@ -143,7 +143,7 @@ mxArray *GB_mx_object_to_mxArray   // returns the built-in mxArray
         {
             ASSERT (cnz == 0) ;
             C->p = (int64_t *) GB_malloc_memory (C->vdim + 1, 
-                sizeof (int64_t), &(C->p_size)) ;
+                GrB_UINT8, &(C->p_size)) ;
             memset (C->p, 0, (C->vdim + 1) * sizeof (int64_t)) ;
             C->p_shallow = false ;
         }
@@ -283,7 +283,7 @@ mxArray *GB_mx_object_to_mxArray   // returns the built-in mxArray
         // otherwise C is cast into a built-in double sparse matrix
         A = mxCreateSparse (0, 0, 0, mxREAL) ;
         size_t Sx_size ;
-        double *Sx = (double *) GB_malloc_memory (cnz+1, sizeof (double),
+        double *Sx = (double *) GB_malloc_memory (cnz+1, GrB_FP64,
             &Sx_size) ;
         if (Sx == NULL && cnz > 0) mexErrMsgTxt ("Sx is NULL!\n") ;
         GB_cast_array ((GB_void *) Sx, GB_FP64_code, C->x, C->type->code,

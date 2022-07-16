@@ -568,14 +568,14 @@ void mexFunction
 
     size_t nbytes ;
     GB_Global_malloc_tracking_set (false) ;
-    GB_void *p = GB_malloc_memory (4, sizeof (int64_t), &nbytes) ;
+    GB_void *p = GB_malloc_memory (4, GrB_INT64, &nbytes) ;
     CHECK (p != NULL) ;
     GB_FREE (&p, nbytes) ;
     CHECK (p == NULL) ;
-    p = GB_calloc_memory (4, sizeof (int64_t), &nbytes, NULL) ;
+    p = GB_calloc_memory (4, GrB_INT64, &nbytes, NULL) ;
     CHECK (p != NULL) ;
     bool ok = true ;
-    p = GB_realloc_memory (6, sizeof (int64_t), p, &nbytes, &ok, NULL) ;
+    p = GB_realloc_memory (6, GrB_INT64, p, &nbytes, &ok, NULL) ;
     CHECK (p != NULL) ;
     CHECK (ok) ;
     GB_FREE (&p, nbytes) ;

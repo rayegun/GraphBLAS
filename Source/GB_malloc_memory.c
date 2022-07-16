@@ -63,7 +63,7 @@ GB_PUBLIC
 void *GB_malloc_memory      // pointer to allocated block of memory
 (
     size_t nitems,          // number of items to allocate
-    size_t size_of_item,    // sizeof each item
+    GrB_Type type,    // sizeof each item
     // output
     size_t *size_allocated  // # of bytes actually allocated
 )
@@ -72,7 +72,8 @@ void *GB_malloc_memory      // pointer to allocated block of memory
     //--------------------------------------------------------------------------
     // check inputs
     //--------------------------------------------------------------------------
-
+    size_t size_of_item = type->size ;
+    
     ASSERT (size_allocated != NULL) ;
 
     void *p ;
