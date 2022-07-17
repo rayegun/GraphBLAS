@@ -25,7 +25,6 @@ static inline void *GB_malloc_helper
 )
 {
     void *p = NULL ;
-
     // determine the next higher power of 2
     (*size) = GB_IMAX (*size, 8) ;
     int k = GB_CEIL_LOG2 (*size) ;
@@ -44,8 +43,10 @@ static inline void *GB_malloc_helper
     if (p == NULL)
     {
         // no block in the free_pool, so allocate it
-        #ifdef GBJULIA
-            p = GB_Global_malloc_function (*nitems, type) ;
+        #ifdef GB_JULIA
+            p = GB_Global_malloc_function (nitems, type) ;
+            GB_Global_memtable_dump ( ) ;
+            fflush(stdout) ;
         #else
             p = GB_Global_malloc_function (*size) ;
         #endif
@@ -140,8 +141,8 @@ void *GB_malloc_memory      // pointer to allocated block of memory
     //--------------------------------------------------------------------------
     // return result
     //--------------------------------------------------------------------------
-    #ifdef GBJULIA
-        size = nitems * type->size
+    #ifdef GB_JULIA
+    size = nitems * size_of_item ;
     #endif
     (*size_allocated) = (p == NULL) ? 0 : size ;
     ASSERT (GB_IMPLIES (p != NULL, size == GB_Global_memtable_size (p))) ;

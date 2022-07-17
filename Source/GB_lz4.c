@@ -18,7 +18,7 @@
 
 void *LZ4_malloc (size_t s)
 {
-    return (GB_Global_malloc_function (s)) ;
+    return (GB_Global_malloc_function (s, GrB_UINT8)) ;
 }
 
 void *LZ4_calloc (size_t n, size_t s)
@@ -28,7 +28,7 @@ void *LZ4_calloc (size_t n, size_t s)
     bool ok = GB_size_t_multiply (&ns, n, s) ;
     if (!ok) return (NULL) ;
     // malloc the space and then use memset to clear it
-    void *p = GB_Global_malloc_function (ns) ;
+    void *p = GB_Global_malloc_function (ns, GrB_UINT8) ;
     if (p != NULL) memset (p, 0, ns) ;
     return (p) ;
 }

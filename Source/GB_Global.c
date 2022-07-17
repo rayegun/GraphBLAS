@@ -57,7 +57,7 @@ typedef struct
 
     // All threads must use the same malloc/realloc/free functions.
     // They default to the ANSI C11 functions, but can be defined by GxB_init.
-    #ifdef GBJULIA
+    #ifdef GB_JULIA
     void * (* malloc_function ) (size_t, GrB_Type);
     #else
     void * (* malloc_function  ) (size_t)         ;     // required
@@ -205,7 +205,7 @@ GB_Global_struct GB_Global =
     .abort_function   = abort,
 
     // malloc/realloc/free functions: default to ANSI C11 functions
-    #ifdef GBJULIA
+    #ifdef GB_JULIA
     .malloc_function = NULL,
     #else
     .malloc_function  = malloc,
@@ -358,11 +358,8 @@ GB_Global_struct GB_Global =
 
 } ;
 
-GB_PUBLIC bool forJulia =
-#ifdef GBJULIA
-true ;
-#else
-false ;
+#ifdef GB_JULIA
+GB_PUBLIC bool forJulia = true ;
 #endif
 //==============================================================================
 // GB_Global access functions
@@ -797,7 +794,7 @@ void GB_Global_memtable_remove (void *p)
 // malloc_function
 //------------------------------------------------------------------------------
 
-#ifdef GBJULIA
+#ifdef GB_JULIA
 
 void GB_Global_malloc_function_set
     (void * (* malloc_function) (size_t, GrB_Type))

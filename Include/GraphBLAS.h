@@ -360,6 +360,8 @@ typedef enum
 }
 GrB_Mode ;
 
+typedef struct GB_Type_opaque *GrB_Type ;
+
 GB_PUBLIC
 GrB_Info GrB_init           // start up GraphBLAS
 (
@@ -372,7 +374,7 @@ GrB_Info GxB_init           // start up GraphBLAS and also define malloc, etc
     GrB_Mode mode,          // blocking or non-blocking mode,
                             // with or without GPU
     // pointers to memory management functions
-    #ifdef GBJULIA
+    #ifdef GB_JULIA
     void * (* user_malloc_function  ) (size_t, GrB_Type), // required
     #else
     void * (* user_malloc_function  ) (size_t), // required

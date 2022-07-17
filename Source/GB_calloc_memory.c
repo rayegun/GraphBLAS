@@ -21,6 +21,7 @@ static inline void *GB_calloc_helper
     size_t *size,           // on input: # of bytes requested
                             // on output: # of bytes actually allocated
     // input:
+    GrB_Type type,
     GB_Context Context
 )
 {
@@ -45,7 +46,7 @@ static inline void *GB_calloc_helper
     if (p == NULL)
     {
         // no block in the free_pool, so allocate it
-        p = GB_Global_malloc_function (*size) ;
+        p = GB_Global_malloc_function (*size, GrB_UINT8) ;
         #ifdef GB_MEMDUMP
         printf ("hard calloc %p %ld\n", p, *size) ;
         #endif
@@ -129,7 +130,7 @@ void *GB_calloc_memory      // pointer to allocated block of memory
         }
         else
         { 
-            p = GB_calloc_helper (&size, Context) ;
+            p = GB_calloc_helper (&size, type, Context) ;
         }
 
     }
@@ -140,7 +141,7 @@ void *GB_calloc_memory      // pointer to allocated block of memory
         // normal use, in production
         //----------------------------------------------------------------------
 
-        p = GB_calloc_helper (&size, Context) ;
+        p = GB_calloc_helper (&size, type, Context) ;
     }
 
     //--------------------------------------------------------------------------
