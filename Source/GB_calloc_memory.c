@@ -131,7 +131,7 @@ void *GB_calloc_memory      // pointer to allocated block of memory
         }
         else
         { 
-            p = GB_calloc_helper (&size, type, Context) ;
+            p = GB_calloc_helper (&size, nitems, type, Context) ;
         }
 
     }
@@ -142,7 +142,7 @@ void *GB_calloc_memory      // pointer to allocated block of memory
         // normal use, in production
         //----------------------------------------------------------------------
 
-        p = GB_calloc_helper (&size, type, Context) ;
+        p = GB_calloc_helper (&size, nitems, type, Context) ;
     }
 
     //--------------------------------------------------------------------------
