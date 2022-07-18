@@ -30,27 +30,22 @@ static inline void *GB_malloc_helper
     int k = GB_CEIL_LOG2 (*size) ;
 
     // if available, get the block from the pool
-    if (GB_Global_free_pool_limit_get (k) > 0)
-    {
-        // round up the size to the nearest power of two
-        (*size) = ((size_t) 1) << k ;
-        p = GB_Global_free_pool_get (k) ;
-        #ifdef GB_MEMDUMP
-        if (p != NULL) printf ("malloc from pool: %p %ld\n", p, *size) ;
-        #endif
-    }
+    // if (GB_Global_free_pool_limit_get (k) > 0)
+    // {
+    //     // round up the size to the nearest power of two
+    //     (*size) = ((size_t) 1) << k ;
+    //     p = GB_Global_free_pool_get (k) ;
+    //     if (p != NULL) printf ("malloc from pool: %p %ld\n", p, *size) ;
+    // }
 
     if (p == NULL)
     {
         // no block in the free_pool, so allocate it
         #ifdef GB_JULIA
             p = GB_Global_malloc_function (nitems, type) ;
+            (*size) = nitems * type->size ;
         #else
             p = GB_Global_malloc_function (*size) ;
-        #endif
-
-        #ifdef GB_MEMDUMP
-        printf ("hard malloc %p %ld\n", p, *size) ;
         #endif
     }
     #ifdef GB_MEMDUMP
@@ -143,6 +138,7 @@ void *GB_malloc_memory      // pointer to allocated block of memory
     size = nitems * size_of_item ;
     #endif
     (*size_allocated) = (p == NULL) ? 0 : size ;
+    // printf ("malloc allocated size %ld ?= memtable size %ld\n", size, GB_Global_memtable_size (p)) ;
     ASSERT (GB_IMPLIES (p != NULL, size == GB_Global_memtable_size (p))) ;
     return (p) ;
 }
