@@ -20,16 +20,19 @@ void GB_Matrix_free             // free a matrix
 {
     if (Ahandle != NULL)
     {
+        printf ("Freeing matrix:\n\n ") ;
         GrB_Matrix A = *Ahandle ;
         if (A != NULL && (A->magic == GB_MAGIC || A->magic == GB_MAGIC2))
         {
             // free all content of A
             size_t header_size = A->header_size ;
             GB_phbix_free (A) ;
+            printf("Freed matrix fields. \n") ;
             if (!(A->static_header))
-            { 
+            {
                 // free the header of A itself, unless it is static
                 A->magic = GB_FREED ;       // to help detect dangling pointers
+                printf("Freeing matrix header of size %zu", header_size) ;
                 GB_FREE (Ahandle, header_size) ;
                 (*Ahandle) = NULL ;
             }

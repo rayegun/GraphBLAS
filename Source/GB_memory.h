@@ -148,13 +148,21 @@ void GB_memset                  // parallel memset
 #else
 
     #define GB_FREE(p,s) \
-        GB_dealloc_memory ((void **) p, s)
+        GB_dealloc_memory ((void **) p, s) ; \
+        printf ("Requested free in file %s, line %d: pointer: %p of size %lu\n", \
+            __FILE__, __LINE__, (*p), s) ; \
 
     #define GB_CALLOC(ptrtype,n,type,s) \
-        (ptrtype *) GB_calloc_memory (n, type, s, Context)
+        (ptrtype *) GB_calloc_memory (n, type, s, Context) ; \
+        printf("Asking for %lu zeroe'd items of", n) ; \
+        GxB_fprint(type, GxB_COMPLETE_VERBOSE, stdout) ; \
+        printf("in file %s, line %d\n", __FILE__, __LINE__) ;
 
     #define GB_MALLOC(ptrtype,n,type,s) \
-        (ptrtype *) GB_malloc_memory (n, type, s)
+        (ptrtype *) GB_malloc_memory (n, type, s) ; \
+        printf("Asking for %lu items of", n) ; \
+        GxB_fprint(type, GxB_COMPLETE_VERBOSE, stdout) ; \
+        printf("in file %s, line %d\n", __FILE__, __LINE__) ;
         
     #define GB_REALLOC(p,ptrtype,nnew,type,s,ok,Context) \
         p = (ptrtype *) GB_realloc_memory (nnew, type, \

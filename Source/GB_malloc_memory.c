@@ -45,8 +45,6 @@ static inline void *GB_malloc_helper
         // no block in the free_pool, so allocate it
         #ifdef GB_JULIA
             p = GB_Global_malloc_function (nitems, type) ;
-            GB_Global_memtable_dump ( ) ;
-            fflush(stdout) ;
         #else
             p = GB_Global_malloc_function (*size) ;
         #endif
