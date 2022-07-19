@@ -55,11 +55,8 @@ GrB_Info GxB_init           // start up GraphBLAS and also define malloc, etc
     GrB_Mode mode,          // blocking or non-blocking mode, GPU or not
 
     // pointers to memory management functions
-    #ifdef GB_JULIA
-    void * (* user_malloc_function  ) (size_t, GrB_Type), // required
-    #else
+
     void * (* user_malloc_function  ) (size_t), // required
-    #endif
     void * (* user_calloc_function  ) (size_t, size_t), // no longer used
     void * (* user_realloc_function ) (void *, size_t), // optional, can be NULL
     void   (* user_free_function    ) (void *)          // required
@@ -88,5 +85,19 @@ GrB_Info GxB_init           // start up GraphBLAS and also define malloc, etc
         user_realloc_function,          // user-defined realloc, may be NULL
         user_free_function,             // user-defined free, required
         Context)) ;
+}
+
+GrB_Info JL_memory_init
+(
+    void * (* jl_malloc_function ) (size_t, GrB_Type),
+    void * (* jl_realloc_function ) (void *, size_t) ,
+    void (* jl_free_function )(void *)
+)
+{
+    JL_Global_malloc_function_set  (jl_malloc_function ) ; // cannot be NULL
+    JL_Global_realloc_function_set (jl_realloc_function) ; // ok if NULL
+    JL_Global_free_function_set    (jl_free_function   ) ; // cannot be NULL
+    GrB_Info info = GrB_SUCCESS ;
+    return (info) ;
 }
 

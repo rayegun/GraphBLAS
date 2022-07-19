@@ -42,9 +42,17 @@ GB_PUBLIC
 void JL_free_memory // free memory back to Julia, bypassing the free_pool
 (
     // input/output
-    void **p
+    void **p,
+    size_t size_allocated
 )
 {
-    JL_Global_free_function(*p) ;
-    (*p) = NULL ;
+    if (JL_Global_have_free_function())
+    {
+        JL_Global_free_function(*p) ;
+        (*p) = NULL ;
+    }
+    else
+    {
+        GB_dealloc_memory(p, size_allocated) ;
+    }
 }

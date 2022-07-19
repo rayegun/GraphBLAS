@@ -86,7 +86,7 @@ GrB_Info GB_serialize_array
         // no compression, return result as a single block (plus the sentinel)
         if (!dryrun)
         {
-            Blocks = GB_MALLOC_WORK(2, GB_blocks, &Blocks_size) ;
+            Blocks = GB_MALLOC_WORK (2, GB_blocks, &Blocks_size) ;
             Sblocks = GB_MALLOC_WORK (2, int64_t, &Sblocks_size) ;
             if (Blocks == NULL || Sblocks == NULL)
             { 

@@ -88,7 +88,7 @@ GrB_Info GB_Monoid_new          // create a monoid
 
     // allocate the monoid
     size_t header_size ;
-    (*monoid) = GB_MALLOC_WORK(1, struct GB_Monoid_opaque, &header_size) ;
+    (*monoid) = GB_MALLOC_WORK (1, struct GB_Monoid_opaque, &header_size) ;
     if (*monoid == NULL)
     { 
         // out of memory
@@ -113,7 +113,7 @@ GrB_Info GB_Monoid_new          // create a monoid
     // allocate the identity value
     #define GB_ALLOC_IDENTITY                                               \
     {                                                                       \
-        mon->identity = GB_MALLOC_WORK(zsize, GB_void, &(mon->identity_size)) ; \
+        mon->identity = GB_MALLOC_WORK (zsize, GB_void, &(mon->identity_size)) ; \
         if (mon->identity == NULL)                                          \
         {                                                                   \
             /* out of memory */                                             \

@@ -164,18 +164,26 @@ void *JL_calloc_memory      // pointer to allocated block of memory
     GB_Context Context
 )
 {
-    void *p = NULL ;
-    // no block in the free_pool, so allocate it
-    p = JL_Global_malloc_function (nitems, type) ;
-    (*size_allocated = nitems * type->size) ;
+    if (JL_Global_have_malloc_function())
+    {
+        void *p = NULL ;
+        // no block in the free_pool, so allocate it
+        p = JL_Global_malloc_function (nitems, type) ;
+        (*size_allocated = nitems * type->size) ;
 
-    if (p != NULL)
-    { 
-        // clear the block of memory with a parallel memset
-        GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
-        GB_memset (p, 0, (*size_allocated), nthreads_max) ;
+        if (p != NULL)
+        { 
+            // clear the block of memory with a parallel memset
+            GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
+            GB_memset (p, 0, (*size_allocated), nthreads_max) ;
+        }
+
+        return (p) ;
     }
-
-    return (p) ;
+    else
+    {
+        return GB_calloc_memory(nitems, type, size_allocated, Context) ;
+    }
+    
 }
 

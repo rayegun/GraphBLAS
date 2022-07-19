@@ -274,7 +274,7 @@ GrB_Info GB_serialize               // serialize a matrix into a blob
         // GxB_Matrix_serialize: allocate the block.  The memory pool may
         // increase the blob from size blob_size_required bytes to
         // blob_size_allocated.
-        blob = GB_MALLOC_WORK(blob_size_required, GB_void, &blob_size_allocated) ;
+        blob = GB_MALLOC_WORK (blob_size_required, GB_void, &blob_size_allocated) ;
         if (blob == NULL)
         { 
             // out of memory

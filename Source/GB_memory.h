@@ -105,7 +105,8 @@ GB_PUBLIC
 void JL_free_memory
 (
     // input/output
-    void **p               // pointer to allocated block of memory to free
+    void **p,               // pointer to allocated block of memory to free
+    size_t size_allocated
 ) ;
 #endif
 
@@ -207,7 +208,7 @@ void GB_memset                  // parallel memset
 #else
     #ifdef GB_JULIA
         #define GB_FREE(p,s) \
-            JL_free_memory ((void **) p) ;
+            JL_free_memory ((void **) p, s) ;
         #define GB_MALLOC(ptrtype,n,type,s) \
             (ptrtype *) JL_malloc_memory (n, type, s) ;
         #define GB_CALLOC(ptrtype,n,type,s) \
@@ -246,7 +247,7 @@ void GB_memset                  // parallel memset
 #define GB_CALLOC_WORK(n,type,s) \
     (type *) GB_calloc_memory ((n) * sizeof(type), GrB_UINT8, s, Context) ;
 #define GB_MALLOC_WORK(n,type,s) \
-    (type *) GB_malloc_memory((n) * sizeof(type),GrB_UINT8,s) ;
+    (type *) GB_malloc_memory((n) * sizeof(type), GrB_UINT8, s) ;
 #define GB_REALLOC_WORK(p,nnew,type,s,ok,Context) \
     p = (type *) GB_realloc_memory (nnew * sizeof(type), GrB_UINT8, \
             (void *) p, s, ok, Context)

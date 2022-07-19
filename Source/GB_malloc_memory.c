@@ -150,13 +150,21 @@ void *JL_malloc_memory
     size_t *size_allocated
 )
 {
-    void *p ;
-    // make sure at least one item is allocated
-    nitems = GB_IMAX (1, nitems) ;
+    if (JL_Global_have_malloc_function())
+    {
+        void *p ;
+        // make sure at least one item is allocated
+        nitems = GB_IMAX (1, nitems) ;
 
-    p = JL_Global_malloc_function (nitems, type) ;
-    (*size_allocated) = (p == NULL) ? 0 : type->size * nitems ;
-    return (p) ;
+        p = JL_Global_malloc_function (nitems, type) ;
+        (*size_allocated) = (p == NULL) ? 0 : type->size * nitems ;
+        return (p) ;
+    }
+    else
+    {
+        return GB_malloc_memory(nitems, type, size_allocated) ;
+    }
+    
 }
 #endif
 

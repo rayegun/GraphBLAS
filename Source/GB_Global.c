@@ -802,6 +802,11 @@ void JL_Global_malloc_function_set
     GB_Global.jl_malloc_function = jl_malloc_function ;
 }
 
+bool JL_Global_have_malloc_function (void)
+{ 
+    return (GB_Global.jl_malloc_function != NULL) ;
+}
+
 void * JL_Global_malloc_function (size_t nitems, GrB_Type type)
 { 
     void *p = NULL ;
@@ -923,6 +928,11 @@ void GB_Global_free_function (void *p)
 void JL_Global_free_function_set (void (* jl_free_function) (void *))
 { 
     GB_Global.jl_free_function = jl_free_function ;
+}
+
+bool JL_Global_have_free_function (void)
+{ 
+    return (GB_Global.jl_free_function != NULL) ;
 }
 
 void JL_Global_free_function (void *p)

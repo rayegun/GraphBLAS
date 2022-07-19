@@ -215,100 +215,107 @@ void *JL_realloc_memory     // pointer to reallocated block of memory, or
 )
 {
 
-    size_t size_of_item = type->size ;
-    //--------------------------------------------------------------------------
-    // malloc a new block if p is NULL on input
-    //--------------------------------------------------------------------------
+    if (JL_Global_have_realloc_function() && JL_Global_have_malloc_function()){
+        size_t size_of_item = type->size ;
+        //--------------------------------------------------------------------------
+        // malloc a new block if p is NULL on input
+        //--------------------------------------------------------------------------
 
-    if (p == NULL)
-    { 
-        p = JL_malloc_memory (nitems_new, type, size_allocated) ;
-        (*ok) = (p != NULL) ;
-        return (p) ;
-    }
-
-    //--------------------------------------------------------------------------
-    // check inputs
-    //--------------------------------------------------------------------------
-
-    // make sure at least one byte is allocated
-    size_of_item = GB_IMAX (1, size_of_item) ;
-
-    size_t oldsize_allocated = (*size_allocated) ;
-
-    // make sure at least one item is allocated
-    size_t nitems_old = oldsize_allocated / size_of_item ;
-    nitems_new = GB_IMAX (1, nitems_new) ;
-
-    // The following is just kept to check for quick return.
-    size_t newsize, oldsize ;
-    (*ok) = GB_size_t_multiply (&newsize, nitems_new, size_of_item)
-         && GB_size_t_multiply (&oldsize, nitems_old, size_of_item) ;
-
-    if (!(*ok) || nitems_new > GB_NMAX || size_of_item > GB_NMAX)
-    { 
-        // overflow
-        (*ok) = false ;
-        return (p) ;
-    }
-
-    //--------------------------------------------------------------------------
-    // check for quick return
-    //--------------------------------------------------------------------------
-
-    if ((newsize == oldsize)
-        || (newsize < oldsize && newsize >= oldsize_allocated/2)
-        || (newsize > oldsize && newsize <= oldsize_allocated))
-    { 
-        // If the block does not change, or is shrinking but only by a small
-        // amount, or is growing but still fits inside the existing block,
-        // then leave the block as-is.
-        (*ok) = true ;
-        return (p) ;
-    }
-
-    //--------------------------------------------------------------------------
-    // reallocate the memory, or use malloc/memcpy/free
-    //--------------------------------------------------------------------------
-
-    void *pnew = NULL ;
-        //----------------------------------------------------------------------
-    // use realloc
-    //----------------------------------------------------------------------
-    // The realloc function has been provided, and the block is larger
-    // than what can be accomodated by the free_pool.
-    pnew = JL_Global_realloc_function (p, nitems_new) ;
-
-    //--------------------------------------------------------------------------
-    // check if successful and return result
-    //--------------------------------------------------------------------------
-
-    if (pnew == NULL)
-    {
-        // realloc failed
-        if (newsize < oldsize)
+        if (p == NULL)
         { 
-            // the attempt to reduce the size of the block failed, but the old
-            // block is unchanged.  So pretend to succeed, but do not change
-            // size_allocated since it must reflect the actual size of the
-            // block.
+            p = JL_malloc_memory (nitems_new, type, size_allocated) ;
+            (*ok) = (p != NULL) ;
+            return (p) ;
+        }
+
+        //--------------------------------------------------------------------------
+        // check inputs
+        //--------------------------------------------------------------------------
+
+        // make sure at least one byte is allocated
+        size_of_item = GB_IMAX (1, size_of_item) ;
+
+        size_t oldsize_allocated = (*size_allocated) ;
+
+        // make sure at least one item is allocated
+        size_t nitems_old = oldsize_allocated / size_of_item ;
+        nitems_new = GB_IMAX (1, nitems_new) ;
+
+        // The following is just kept to check for quick return.
+        size_t newsize, oldsize ;
+        (*ok) = GB_size_t_multiply (&newsize, nitems_new, size_of_item)
+             && GB_size_t_multiply (&oldsize, nitems_old, size_of_item) ;
+
+        if (!(*ok) || nitems_new > GB_NMAX || size_of_item > GB_NMAX)
+        { 
+            // overflow
+            (*ok) = false ;
+            return (p) ;
+        }
+
+        //--------------------------------------------------------------------------
+        // check for quick return
+        //--------------------------------------------------------------------------
+
+        if ((newsize == oldsize)
+            || (newsize < oldsize && newsize >= oldsize_allocated/2)
+            || (newsize > oldsize && newsize <= oldsize_allocated))
+        { 
+            // If the block does not change, or is shrinking but only by a small
+            // amount, or is growing but still fits inside the existing block,
+            // then leave the block as-is.
             (*ok) = true ;
+            return (p) ;
+        }
+
+        //--------------------------------------------------------------------------
+        // reallocate the memory, or use malloc/memcpy/free
+        //--------------------------------------------------------------------------
+
+        void *pnew = NULL ;
+            //----------------------------------------------------------------------
+        // use realloc
+        //----------------------------------------------------------------------
+        // The realloc function has been provided, and the block is larger
+        // than what can be accomodated by the free_pool.
+        pnew = JL_Global_realloc_function (p, nitems_new) ;
+
+        //--------------------------------------------------------------------------
+        // check if successful and return result
+        //--------------------------------------------------------------------------
+
+        if (pnew == NULL)
+        {
+            // realloc failed
+            if (newsize < oldsize)
+            { 
+                // the attempt to reduce the size of the block failed, but the old
+                // block is unchanged.  So pretend to succeed, but do not change
+                // size_allocated since it must reflect the actual size of the
+                // block.
+                (*ok) = true ;
+            }
+            else
+            { 
+                // out of memory.  the old block is unchanged
+                (*ok) = false ;
+            }
         }
         else
         { 
-            // out of memory.  the old block is unchanged
-            (*ok) = false ;
+            // realloc succeeded
+            p = pnew ;
+            (*ok) = true ;
+            (*size_allocated) = nitems_new * type->size ;
         }
+
+        return (p) ;
     }
     else
-    { 
-        // realloc succeeded
-        p = pnew ;
-        (*ok) = true ;
-        (*size_allocated) = nitems_new * type->size ;
+    {
+        return GB_realloc_memory(nitems_new, type, p, size_allocated, ok, Context) ;
     }
-
-    return (p) ;
+    
 }
 #endif
 
