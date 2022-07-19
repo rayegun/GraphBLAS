@@ -62,7 +62,7 @@ typedef struct
     void   (* free_function    ) (void *)         ;     // required
     bool malloc_is_thread_safe ;   // default is true
     #ifdef GB_JULIA
-    void * (* jl_malloc_function ) (size_t, GrB_Type);
+    void * (* jl_malloc_function ) (size_t, GrB_Type) ;
     void * (* jl_realloc_function ) (void *, size_t) ;
     void (* jl_free_function )(void *) ;
     #endif

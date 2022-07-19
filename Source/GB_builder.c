@@ -941,7 +941,9 @@ GrB_Info GB_builder                 // build a matrix from tuples
     //--------------------------------------------------------------------------
 
     ASSERT (J_work_handle != NULL) ;
-    GB_FREE_WORK (J_work_handle, *J_work_size_handle) ;
+    // We free J_work with GB_FREE since it may be A->i from a GBMatrix,
+    // thus allocated using GB_MALLOC not GB_MALLOC_WORK
+    GB_FREE (J_work_handle, *J_work_size_handle) ;
     J_work = NULL ;
 
     //--------------------------------------------------------------------------

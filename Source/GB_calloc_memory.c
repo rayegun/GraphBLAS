@@ -177,7 +177,7 @@ void *JL_calloc_memory      // pointer to allocated block of memory
             GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
             GB_memset (p, 0, (*size_allocated), nthreads_max) ;
         }
-
+        if (p == NULL) (*size_allocated) = 0 ;
         return (p) ;
     }
     else

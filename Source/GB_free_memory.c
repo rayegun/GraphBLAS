@@ -46,7 +46,7 @@ void JL_free_memory // free memory back to Julia, bypassing the free_pool
     size_t size_allocated
 )
 {
-    if (JL_Global_have_free_function())
+    if (JL_Global_have_free_function() && p != NULL && (*p) != NULL)
     {
         JL_Global_free_function(*p) ;
         (*p) = NULL ;
