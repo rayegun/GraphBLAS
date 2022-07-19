@@ -26,7 +26,7 @@ GrB_Info GB_Op_free             // free a user-created op
             { 
                 op->magic = GB_FREED ;  // to help detect dangling pointers
                 op->header_size = 0 ;
-                GB_FREE (op_handle, header_size) ;
+                GB_FREE_WORK (op_handle, header_size) ;
             }
         }
     }

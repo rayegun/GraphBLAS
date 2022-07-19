@@ -36,9 +36,9 @@
 
 #define GB_FREE_WORKSPACE               \
 {                                       \
-    GB_FREE (&iwork, iwork_size) ;      \
-    GB_FREE (&jwork, jwork_size) ;      \
-    GB_FREE (&Swork, Swork_size) ;      \
+    GB_FREE_WORK (&iwork, iwork_size) ;      \
+    GB_FREE_WORK (&jwork, jwork_size) ;      \
+    GB_FREE_WORK (&Swork, Swork_size) ;      \
     GB_WERK_POP (Count, int64_t) ;      \
 }
 
@@ -712,7 +712,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
             //------------------------------------------------------------------
 
             // allocate iwork of size anz
-            iwork = GB_MALLOC (int64_t, anz, GrB_INT64, &iwork_size) ;
+            iwork = GB_MALLOC_WORK (anz, int64_t, &iwork_size) ;
             if (iwork == NULL)
             { 
                 // out of memory
@@ -754,7 +754,7 @@ GrB_Info GB_transpose           // C=A', C=(ctype)A' or C=op(A')
             if (!recycle_Ai)
             { 
                 // allocate jwork of size anz
-                jwork = GB_MALLOC (int64_t, anz, GrB_INT64, &jwork_size) ;
+                jwork = GB_MALLOC_WORK (anz, int64_t, &jwork_size) ;
                 ok = ok && (jwork != NULL) ;
             }
 

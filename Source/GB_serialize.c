@@ -18,11 +18,11 @@
 
 #define GB_FREE_WORKSPACE                       \
 {                                               \
-    GB_FREE (&Ap_Sblocks, Ap_Sblocks_size) ;    \
-    GB_FREE (&Ah_Sblocks, Ah_Sblocks_size) ;    \
-    GB_FREE (&Ab_Sblocks, Ab_Sblocks_size) ;    \
-    GB_FREE (&Ai_Sblocks, Ai_Sblocks_size) ;    \
-    GB_FREE (&Ax_Sblocks, Ax_Sblocks_size) ;    \
+    GB_FREE_WORK (&Ap_Sblocks, Ap_Sblocks_size) ;    \
+    GB_FREE_WORK (&Ah_Sblocks, Ah_Sblocks_size) ;    \
+    GB_FREE_WORK (&Ab_Sblocks, Ab_Sblocks_size) ;    \
+    GB_FREE_WORK (&Ai_Sblocks, Ai_Sblocks_size) ;    \
+    GB_FREE_WORK (&Ax_Sblocks, Ax_Sblocks_size) ;    \
     GB_serialize_free_blocks (&Ap_Blocks, Ap_Blocks_size, Ap_nblocks, Context);\
     GB_serialize_free_blocks (&Ah_Blocks, Ah_Blocks_size, Ah_nblocks, Context);\
     GB_serialize_free_blocks (&Ab_Blocks, Ab_Blocks_size, Ab_nblocks, Context);\
@@ -35,7 +35,7 @@
     GB_FREE_WORKSPACE ;                         \
     if (!preallocated_blob)                     \
     {                                           \
-        GB_FREE (&blob, blob_size_allocated) ;  \
+        GB_FREE_WORK (&blob, blob_size_allocated) ;  \
     }                                           \
 }
 
@@ -274,7 +274,7 @@ GrB_Info GB_serialize               // serialize a matrix into a blob
         // GxB_Matrix_serialize: allocate the block.  The memory pool may
         // increase the blob from size blob_size_required bytes to
         // blob_size_allocated.
-        blob = GB_MALLOC (GB_void, blob_size_required, GrB_UINT8, &blob_size_allocated) ;
+        blob = GB_MALLOC_WORK(blob_size_required, GB_void, &blob_size_allocated) ;
         if (blob == NULL)
         { 
             // out of memory

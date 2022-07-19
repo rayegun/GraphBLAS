@@ -32,7 +32,7 @@
 
 #define GB_FREE_ALL                     \
 {                                       \
-    GB_FREE (semiring, header_size) ;   \
+    GB_FREE_WORK (semiring, header_size) ;   \
 }
 
 GrB_Info GrB_Semiring_new           // create a semiring
@@ -64,7 +64,7 @@ GrB_Info GrB_Semiring_new           // create a semiring
     //--------------------------------------------------------------------------
 
     size_t header_size ;
-    (*semiring) = GB_MALLOC (struct GB_Semiring_opaque, sizeof(struct GB_Semiring_opaque), GrB_UINT8, &header_size) ;
+    (*semiring) = GB_MALLOC_WORK (1, struct GB_Semiring_opaque, &header_size) ;
     if (*semiring == NULL)
     {
         // out of memory

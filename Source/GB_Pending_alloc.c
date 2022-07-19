@@ -32,7 +32,7 @@ bool GB_Pending_alloc       // create a list of pending tuples
     //--------------------------------------------------------------------------
 
     size_t header_size ;
-    GB_Pending Pending = GB_MALLOC (struct GB_Pending_struct, sizeof(struct GB_Pending_struct), GrB_UINT8, &header_size) ;
+    GB_Pending Pending = GB_MALLOC_WORK(1, struct GB_Pending_struct, &header_size) ;
     if (Pending == NULL)
     { 
         // out of memory

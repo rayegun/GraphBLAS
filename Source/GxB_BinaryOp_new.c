@@ -44,7 +44,7 @@ GrB_Info GxB_BinaryOp_new
     //--------------------------------------------------------------------------
 
     size_t header_size ;
-    (*op) = GB_MALLOC (struct GB_BinaryOp_opaque, sizeof(struct GB_BinaryOp_opaque), GrB_UINT8, &header_size) ;
+    (*op) = GB_MALLOC_WORK (1, struct GB_BinaryOp_opaque, &header_size) ;
     if (*op == NULL)
     { 
         // out of memory

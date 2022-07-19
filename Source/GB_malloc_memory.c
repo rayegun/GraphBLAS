@@ -18,34 +18,34 @@
 static inline void *GB_malloc_helper
 (
     // input/output:
-    size_t *size,            // on input: # of bytes requested
+    size_t *size            // on input: # of bytes requested
                             // on output: # of bytes actually allocated
-    size_t nitems,
-    GrB_Type type
 )
 {
     void *p = NULL ;
+
     // determine the next higher power of 2
     (*size) = GB_IMAX (*size, 8) ;
     int k = GB_CEIL_LOG2 (*size) ;
 
     // if available, get the block from the pool
-    // if (GB_Global_free_pool_limit_get (k) > 0)
-    // {
-    //     // round up the size to the nearest power of two
-    //     (*size) = ((size_t) 1) << k ;
-    //     p = GB_Global_free_pool_get (k) ;
-    //     if (p != NULL) printf ("malloc from pool: %p %ld\n", p, *size) ;
-    // }
+    if (GB_Global_free_pool_limit_get (k) > 0)
+    {
+        // round up the size to the nearest power of two
+        (*size) = ((size_t) 1) << k ;
+        p = GB_Global_free_pool_get (k) ;
+        #ifdef GB_MEMDUMP
+        if (p != NULL) printf ("malloc from pool: %p %ld\n", p, *size) ;
+        #endif
+    }
 
     if (p == NULL)
     {
         // no block in the free_pool, so allocate it
-        #ifdef GB_JULIA
-            p = GB_Global_malloc_function (nitems, type) ;
-            (*size) = nitems * type->size ;
-        #else
-            p = GB_Global_malloc_function (*size) ;
+        p = GB_Global_malloc_function (*size) ;
+
+        #ifdef GB_MEMDUMP
+        printf ("hard malloc %p %ld\n", p, *size) ;
         #endif
     }
     #ifdef GB_MEMDUMP
@@ -64,7 +64,7 @@ void *GB_malloc_memory      // pointer to allocated block of memory
 (
     size_t nitems,          // number of items to allocate
     GrB_Type type,    // sizeof each item
-    // output
+    // output    
     size_t *size_allocated  // # of bytes actually allocated
 )
 {
@@ -118,7 +118,7 @@ void *GB_malloc_memory      // pointer to allocated block of memory
         }
         else
         {
-            p = GB_malloc_helper (&size, nitems, type) ;
+            p = GB_malloc_helper (&size) ;
         }
 
     }
@@ -128,18 +128,35 @@ void *GB_malloc_memory      // pointer to allocated block of memory
         //----------------------------------------------------------------------
         // normal use, in production
         //----------------------------------------------------------------------
-        p = GB_malloc_helper (&size, nitems, type) ;
+        p = GB_malloc_helper (&size) ;
     }
 
     //--------------------------------------------------------------------------
     // return result
     //--------------------------------------------------------------------------
-    #ifdef GB_JULIA
-    size = nitems * size_of_item ;
-    #endif
+
     (*size_allocated) = (p == NULL) ? 0 : size ;
     // printf ("malloc allocated size %ld ?= memtable size %ld\n", size, GB_Global_memtable_size (p)) ;
     ASSERT (GB_IMPLIES (p != NULL, size == GB_Global_memtable_size (p))) ;
     return (p) ;
 }
+
+#ifdef GB_JULIA
+GB_PUBLIC
+void *JL_malloc_memory
+(
+    size_t nitems,
+    GrB_Type type,
+    size_t *size_allocated
+)
+{
+    void *p ;
+    // make sure at least one item is allocated
+    nitems = GB_IMAX (1, nitems) ;
+
+    p = JL_Global_malloc_function (nitems, type) ;
+    (*size_allocated) = (p == NULL) ? 0 : type->size * nitems ;
+    return (p) ;
+}
+#endif
 

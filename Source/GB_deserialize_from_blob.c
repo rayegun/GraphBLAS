@@ -19,7 +19,7 @@
 
 #define GB_FREE_ALL         \
 {                           \
-    GB_FREE (&X, X_size) ;  \
+    GB_FREE_WORK (&X, X_size) ;  \
 }
 
 GrB_Info GB_deserialize_from_blob
@@ -64,7 +64,7 @@ GrB_Info GB_deserialize_from_blob
     //--------------------------------------------------------------------------
 
     size_t X_size = 0 ;
-    GB_void *X = GB_MALLOC (GB_void, X_len, GrB_UINT8, &X_size) ;  // OK
+    GB_void *X = GB_MALLOC_WORK (X_len, GB_void, &X_size) ;  // OK
     if (X == NULL)
     { 
         // out of memory

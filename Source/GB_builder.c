@@ -117,9 +117,9 @@
 #define GB_FREE_WORKSPACE                           \
 {                                                   \
     GB_WERK_POP (Work, int64_t) ;                   \
-    GB_FREE (I_work_handle, *I_work_size_handle) ;  \
-    GB_FREE (J_work_handle, *J_work_size_handle) ;  \
-    GB_FREE (S_work_handle, *S_work_size_handle) ;  \
+    GB_FREE_WORK (I_work_handle, *I_work_size_handle) ;  \
+    GB_FREE_WORK (J_work_handle, *J_work_size_handle) ;  \
+    GB_FREE_WORK (S_work_handle, *S_work_size_handle) ;  \
     GB_FREE_WORK (&K_work, K_work_size) ;           \
 }
 
@@ -292,7 +292,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         // freed in GB_builder.
 
         ASSERT (J_work == NULL) ;
-        I_work = GB_MALLOC (int64_t, nvals, GrB_INT64, I_work_size_handle) ;
+        I_work = GB_MALLOC_WORK (nvals, int64_t, I_work_size_handle) ;
         (*I_work_handle) = I_work ;
         ijslen = nvals ;
         if (I_work == NULL)
@@ -414,7 +414,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
             if (vdim > 1 && !known_sorted)
             {
                 // copy J_input into J_work, so the tuples can be sorted
-                J_work = GB_MALLOC (int64_t, nvals, GrB_INT64, J_work_size_handle) ;
+                J_work = GB_MALLOC_WORK (nvals, int64_t, J_work_size_handle) ;
                 (*J_work_handle) = J_work ;
                 if (J_work == NULL)
                 { 
@@ -941,7 +941,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
     //--------------------------------------------------------------------------
 
     ASSERT (J_work_handle != NULL) ;
-    GB_FREE (J_work_handle, *J_work_size_handle) ;
+    GB_FREE_WORK (J_work_handle, *J_work_size_handle) ;
     J_work = NULL ;
 
     //--------------------------------------------------------------------------
@@ -955,7 +955,7 @@ GrB_Info GB_builder                 // build a matrix from tuples
         { 
             // this cannot fail since the size is shrinking.
             bool ok ;
-            GB_REALLOC (I_work, int64_t, tnz, GrB_INT64, I_work_size_handle, &ok, Context);
+            GB_REALLOC_WORK (I_work, tnz, int64_t, I_work_size_handle, &ok, Context);
             ASSERT (ok) ;
         }
         // transplant I_work into T->i

@@ -38,3 +38,13 @@ void GB_free_memory         // free memory, bypassing the free_pool
     }
 }
 
+GB_PUBLIC
+void JL_free_memory // free memory back to Julia, bypassing the free_pool
+(
+    // input/output
+    void **p
+)
+{
+    JL_Global_free_function(*p) ;
+    (*p) = NULL ;
+}

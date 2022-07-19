@@ -21,8 +21,6 @@ static inline void *GB_calloc_helper
     size_t *size,           // on input: # of bytes requested
                             // on output: # of bytes actually allocated
     // input:
-    size_t nitems,
-    GrB_Type type,
     GB_Context Context
 )
 {
@@ -34,19 +32,23 @@ static inline void *GB_calloc_helper
     int k = GB_CEIL_LOG2 (*size) ;
 
     // if available, get the block from the pool
-    // if (GB_Global_free_pool_limit_get (k) > 0)
-    // { 
-    //     // round up the size to the nearest power of two
-    //     (*size) = ((size_t) 1) << k ;
-    //     p = GB_Global_free_pool_get (k) ;
-    //     if (p != NULL) printf ("calloc from pool: %p %ld\n", p, *size) ;
-    // }
+    if (GB_Global_free_pool_limit_get (k) > 0)
+    { 
+        // round up the size to the nearest power of two
+        (*size) = ((size_t) 1) << k ;
+        p = GB_Global_free_pool_get (k) ;
+        #ifdef GB_MEMDUMP
+        if (p != NULL) printf ("calloc from pool: %p %ld\n", p, *size) ;
+        #endif
+    }
 
     if (p == NULL)
     {
         // no block in the free_pool, so allocate it
-        p = GB_Global_malloc_function (nitems, type) ;
-        (*size = nitems * type->size) ;
+        p = GB_Global_malloc_function (*size) ;
+        #ifdef GB_MEMDUMP
+        printf ("hard calloc %p %ld\n", p, *size) ;
+        #endif
     }
 
     #ifdef GB_MEMDUMP
@@ -127,7 +129,7 @@ void *GB_calloc_memory      // pointer to allocated block of memory
         }
         else
         { 
-            p = GB_calloc_helper (&size, nitems, type, Context) ;
+            p = GB_calloc_helper (&size, Context) ;
         }
 
     }
@@ -138,7 +140,7 @@ void *GB_calloc_memory      // pointer to allocated block of memory
         // normal use, in production
         //----------------------------------------------------------------------
 
-        p = GB_calloc_helper (&size, nitems, type, Context) ;
+        p = GB_calloc_helper (&size, Context) ;
     }
 
     //--------------------------------------------------------------------------
@@ -149,6 +151,31 @@ void *GB_calloc_memory      // pointer to allocated block of memory
     // printf ("allocated size %ld ?= memtable size %ld\n", size, GB_Global_memtable_size (p)) ;
     (*size_allocated) = (p == NULL) ? 0 : size ;
     ASSERT (GB_IMPLIES (p != NULL, size == GB_Global_memtable_size (p))) ;
+    return (p) ;
+}
+
+GB_PUBLIC
+void *JL_calloc_memory      // pointer to allocated block of memory
+(
+    size_t nitems,          // number of items to allocate
+    GrB_Type type,    // sizeof each item
+    // output
+    size_t *size_allocated, // # of bytes actually allocated
+    GB_Context Context
+)
+{
+    void *p = NULL ;
+    // no block in the free_pool, so allocate it
+    p = JL_Global_malloc_function (nitems, type) ;
+    (*size_allocated = nitems * type->size) ;
+
+    if (p != NULL)
+    { 
+        // clear the block of memory with a parallel memset
+        GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
+        GB_memset (p, 0, (*size_allocated), nthreads_max) ;
+    }
+
     return (p) ;
 }
 

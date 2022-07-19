@@ -26,9 +26,9 @@ GrB_Info GrB_Monoid_free            // free a user-created monoid
             { 
                 mon->magic = GB_FREED ;  // to help detect dangling pointers
                 mon->header_size = 0 ;
-                GB_FREE (&(mon->identity), mon->identity_size) ;
-                GB_FREE (&(mon->terminal), mon->terminal_size) ;
-                GB_FREE (monoid, header_size) ;
+                GB_FREE_WORK (&(mon->identity), mon->identity_size) ;
+                GB_FREE_WORK (&(mon->terminal), mon->terminal_size) ;
+                GB_FREE_WORK (monoid, header_size) ;
             }
         }
     }

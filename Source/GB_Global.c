@@ -57,15 +57,15 @@ typedef struct
 
     // All threads must use the same malloc/realloc/free functions.
     // They default to the ANSI C11 functions, but can be defined by GxB_init.
-    #ifdef GB_JULIA
-    void * (* malloc_function ) (size_t, GrB_Type);
-    #else
     void * (* malloc_function  ) (size_t)         ;     // required
-    #endif
-    
     void * (* realloc_function ) (void *, size_t) ;     // may be NULL
     void   (* free_function    ) (void *)         ;     // required
     bool malloc_is_thread_safe ;   // default is true
+    #ifdef GB_JULIA
+    void * (* jl_malloc_function ) (size_t, GrB_Type);
+    void * (* jl_realloc_function ) (void *, size_t) ;
+    void (* jl_free_function )(void *) ;
+    #endif
 
     //--------------------------------------------------------------------------
     // memory usage tracking: for testing and debugging only
@@ -205,15 +205,15 @@ GB_Global_struct GB_Global =
     .abort_function   = abort,
 
     // malloc/realloc/free functions: default to ANSI C11 functions
-    #ifdef GB_JULIA
-    .malloc_function = NULL,
-    #else
     .malloc_function  = malloc,
-    #endif
     .realloc_function = realloc,
     .free_function    = free,
     .malloc_is_thread_safe = true,
-
+    #ifdef GB_JULIA
+    .jl_malloc_function = NULL,
+    .jl_realloc_function = NULL,
+    .jl_free_function = NULL,
+    #endif
     // malloc tracking, for testing, statistics, and debugging only
     .malloc_tracking = false,
     .nmalloc = 0,                // memory block counter
@@ -256,96 +256,96 @@ GB_Global_struct GB_Global =
     // default limits on the number of free blocks in each list:
     .free_pool_limit =
 
-    // #ifdef _OPENMP
-    // {   0,      // size 2^0 = 1 byte   none
-    //     0,      // size 2^1 = 2        none
-    //     0,      // size 2^2 = 4        none
+    #ifdef _OPENMP
+    {   0,      // size 2^0 = 1 byte   none
+        0,      // size 2^1 = 2        none
+        0,      // size 2^2 = 4        none
 
-    //     16483,  // size 2^3 = 8        (2^14 blocks * 2^3  = 128 KB total)
-    //     16483,  // size 2^4 = 16 bytes (2^14 blocks * 2^4  = 256 KB total)
-    //     16483,  // size 2^5 = 32       (2^14 blocks * 2^5  = 512 KB total)
-    //     16483,  // size 2^6 = 64       (2^14 blocks * 2^6  = 1 MB total)
-    //     16483,  // size 2^7 = 128      (2^14 blocks * 2^7  = 2 MB total)
+        16483,  // size 2^3 = 8        (2^14 blocks * 2^3  = 128 KB total)
+        16483,  // size 2^4 = 16 bytes (2^14 blocks * 2^4  = 256 KB total)
+        16483,  // size 2^5 = 32       (2^14 blocks * 2^5  = 512 KB total)
+        16483,  // size 2^6 = 64       (2^14 blocks * 2^6  = 1 MB total)
+        16483,  // size 2^7 = 128      (2^14 blocks * 2^7  = 2 MB total)
 
-    //     16483,  // size 2^8 = 256      (2^14 blocks * 2^8  = 4 MB total)
-    //     8192,   // size 2^9 = 512      (2^13 blocks * 2^9  = 4 MB total)
-    //     4096,   // size 2^10 = 1 KB    (2^12 blocks * 2^10 = 4 MB total)
-    //     2048,   // size 2^11 = 2 KB    (2^11 blocks * 2^11 = 4 MB total)
+        16483,  // size 2^8 = 256      (2^14 blocks * 2^8  = 4 MB total)
+        8192,   // size 2^9 = 512      (2^13 blocks * 2^9  = 4 MB total)
+        4096,   // size 2^10 = 1 KB    (2^12 blocks * 2^10 = 4 MB total)
+        2048,   // size 2^11 = 2 KB    (2^11 blocks * 2^11 = 4 MB total)
 
-    //     1024,   // size 2^12 = 4 KB    (2^10 blocks * 2^12 = 4 MB total)
-    //     512,    // size 2^13 = 8 KB    (2^9  blocks * 2^13 = 4 MB total)
-    //     256,    // size 2^14 = 16 KB   (2^8  blocks * 2^14 = 4 MB total)
-    //     128,    // size 2^15 = 32 KB   (2^7  blocks * 2^15 = 4 MB total)
+        1024,   // size 2^12 = 4 KB    (2^10 blocks * 2^12 = 4 MB total)
+        512,    // size 2^13 = 8 KB    (2^9  blocks * 2^13 = 4 MB total)
+        256,    // size 2^14 = 16 KB   (2^8  blocks * 2^14 = 4 MB total)
+        128,    // size 2^15 = 32 KB   (2^7  blocks * 2^15 = 4 MB total)
 
-    //     // maximum total size = about 36 MB
-    //     // by default, no blocks larger than 32 KB are kept in the free_pool
+        // maximum total size = about 36 MB
+        // by default, no blocks larger than 32 KB are kept in the free_pool
 
-    //     0,      // size 2^16 = 64 KB
-    //     0,      // size 2^17 = 128 KB
-    //     0,      // size 2^18 = 256 KB
-    //     0,      // size 2^19 = 512 KB
+        0,      // size 2^16 = 64 KB
+        0,      // size 2^17 = 128 KB
+        0,      // size 2^18 = 256 KB
+        0,      // size 2^19 = 512 KB
 
-    //     0,      // size 2^20 = 1 MB
-    //     0,      // size 2^21
-    //     0,      // size 2^22
-    //     0,      // size 2^23
-    //     0,      // size 2^24
-    //     0,      // size 2^25
-    //     0,      // size 2^26
-    //     0,      // size 2^27
-    //     0,      // size 2^28
-    //     0,      // size 2^29
+        0,      // size 2^20 = 1 MB
+        0,      // size 2^21
+        0,      // size 2^22
+        0,      // size 2^23
+        0,      // size 2^24
+        0,      // size 2^25
+        0,      // size 2^26
+        0,      // size 2^27
+        0,      // size 2^28
+        0,      // size 2^29
 
-    //     0,      // size 2^30 (1 GB)
-    //     0,      // size 2^31
-    //     0,      // size 2^32
-    //     0,      // size 2^33
-    //     0,      // size 2^34
-    //     0,      // size 2^35
-    //     0,      // size 2^36
-    //     0,      // size 2^37
-    //     0,      // size 2^38
-    //     0,      // size 2^39
+        0,      // size 2^30 (1 GB)
+        0,      // size 2^31
+        0,      // size 2^32
+        0,      // size 2^33
+        0,      // size 2^34
+        0,      // size 2^35
+        0,      // size 2^36
+        0,      // size 2^37
+        0,      // size 2^38
+        0,      // size 2^39
 
-    //     // These larger sizes are of course unlikely to appear, but adding all
-    //     // 64 possibilities means that the free_pool does not need to check an
-    //     // upper bound.
+        // These larger sizes are of course unlikely to appear, but adding all
+        // 64 possibilities means that the free_pool does not need to check an
+        // upper bound.
 
-    //     0,      // size 2^40 (1 TB)
-    //     0,      // size 2^41
-    //     0,      // size 2^42
-    //     0,      // size 2^43
-    //     0,      // size 2^44
-    //     0,      // size 2^45
-    //     0,      // size 2^46
-    //     0,      // size 2^47
-    //     0,      // size 2^48
-    //     0,      // size 2^49
+        0,      // size 2^40 (1 TB)
+        0,      // size 2^41
+        0,      // size 2^42
+        0,      // size 2^43
+        0,      // size 2^44
+        0,      // size 2^45
+        0,      // size 2^46
+        0,      // size 2^47
+        0,      // size 2^48
+        0,      // size 2^49
 
-    //     0,      // size 2^50 (1 PB)
-    //     0,      // size 2^51
-    //     0,      // size 2^52
-    //     0,      // size 2^53
-    //     0,      // size 2^54
-    //     0,      // size 2^55
-    //     0,      // size 2^56
-    //     0,      // size 2^57
-    //     0,      // size 2^58
-    //     0,      // size 2^59
+        0,      // size 2^50 (1 PB)
+        0,      // size 2^51
+        0,      // size 2^52
+        0,      // size 2^53
+        0,      // size 2^54
+        0,      // size 2^55
+        0,      // size 2^56
+        0,      // size 2^57
+        0,      // size 2^58
+        0,      // size 2^59
 
-    //     0,      // size 2^60 (1 exabyte)
-    //     0,      // size 2^61
-    //     0,      // size 2^62
-    //     0 },    // size 2^63 (4 exabytes!)
+        0,      // size 2^60 (1 exabyte)
+        0,      // size 2^61
+        0,      // size 2^62
+        0 },    // size 2^63 (4 exabytes!)
 
-// #else
+#else
     // the free pool requires an OpenMP critical section,
     // so disable it if OpenMP is not available.
       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-// #endif
+#endif
 
     // CPU features
     .cpu_features_avx2 = false,         // x86_64 with AVX2
@@ -796,30 +796,19 @@ void GB_Global_memtable_remove (void *p)
 
 #ifdef GB_JULIA
 
-void GB_Global_malloc_function_set
-    (void * (* malloc_function) (size_t, GrB_Type))
+void JL_Global_malloc_function_set
+    (void * (* jl_malloc_function) (size_t, GrB_Type))
 { 
-    GB_Global.malloc_function = malloc_function ;
+    GB_Global.jl_malloc_function = jl_malloc_function ;
 }
 
-void * GB_Global_malloc_function (size_t nitems, GrB_Type type)
+void * JL_Global_malloc_function (size_t nitems, GrB_Type type)
 { 
     void *p = NULL ;
-    if (GB_Global.malloc_is_thread_safe)
-    {
-        p = GB_Global.malloc_function (nitems, type) ;
-    }
-    else
-    {
-        #pragma omp critical(GB_malloc_protection)
-        {
-            p = GB_Global.malloc_function (nitems, type) ;
-        }
-    }
-    GB_Global_memtable_add (p, nitems * type->size) ;
+    p = GB_Global.jl_malloc_function (nitems, type) ;
     return (p) ;
 }
-#else
+#endif
 
 void GB_Global_malloc_function_set (void * (* malloc_function) (size_t))
 { 
@@ -843,7 +832,6 @@ void * GB_Global_malloc_function (size_t size)
     GB_Global_memtable_add (p, size) ;
     return (p) ;
 }
-#endif
 
 //------------------------------------------------------------------------------
 // realloc_function
@@ -884,6 +872,28 @@ void * GB_Global_realloc_function (void *p, size_t size)
     return (pnew) ;
 }
 
+#ifdef GB_JULIA
+void JL_Global_realloc_function_set
+(
+    void * (* jl_realloc_function) (void *, size_t)
+)
+{
+    GB_Global.jl_realloc_function = jl_realloc_function ;
+}
+
+bool JL_Global_have_realloc_function (void)
+{ 
+    return (GB_Global.jl_realloc_function != NULL) ;
+}
+
+void * JL_Global_realloc_function (void *p, size_t size)
+{ 
+    void *pnew = NULL ;
+    pnew = GB_Global.jl_realloc_function (p, size) ;
+    return (pnew) ;
+}
+#endif
+
 //------------------------------------------------------------------------------
 // free_function
 //------------------------------------------------------------------------------
@@ -908,6 +918,18 @@ void GB_Global_free_function (void *p)
     }
     GB_Global_memtable_remove (p) ;
 }
+
+#ifdef GB_JULIA
+void JL_Global_free_function_set (void (* jl_free_function) (void *))
+{ 
+    GB_Global.jl_free_function = jl_free_function ;
+}
+
+void JL_Global_free_function (void *p)
+{ 
+    GB_Global.jl_free_function (p) ;
+}
+#endif
 
 //------------------------------------------------------------------------------
 // malloc_is_thread_safe

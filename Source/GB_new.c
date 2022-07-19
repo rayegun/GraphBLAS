@@ -67,7 +67,7 @@ GrB_Info GB_new                 // create matrix, except for indices & values
     if ((*Ahandle) == NULL)
     {
         size_t header_size ;
-        (*Ahandle) = GB_MALLOC (struct GB_Matrix_opaque, sizeof(struct GB_Matrix_opaque), GrB_UINT8, &header_size) ;
+        (*Ahandle) = GB_MALLOC_WORK (1, struct GB_Matrix_opaque, &header_size) ;
         if (*Ahandle == NULL)
         { 
             // out of memory

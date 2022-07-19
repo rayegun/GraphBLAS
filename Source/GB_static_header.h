@@ -23,7 +23,7 @@
     #define GB_CLEAR_STATIC_HEADER(XX,XX_header_handle)                     \
     {                                                                       \
         size_t XX_size ;                                                    \
-        XX = GB_CALLOC (1, struct GB_Matrix_opaque, &XX_size) ;             \
+        XX = GB_CALLOC_WORK (1, struct GB_Matrix_opaque, &XX_size) ;        \
         if (XX == NULL)                                                     \
         {                                                                   \
             GB_FREE_ALL ;                                                   \

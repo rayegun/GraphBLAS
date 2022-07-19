@@ -31,7 +31,7 @@ GrB_Info GrB_Descriptor_new     // create a new descriptor
 
     // allocate the descriptor
     size_t header_size ;
-    (*descriptor) = GB_MALLOC (struct GB_Descriptor_opaque, sizeof(struct GB_Descriptor_opaque), GrB_UINT8, &header_size) ;
+    (*descriptor) = GB_MALLOC_WORK (1, struct GB_Descriptor_opaque, &header_size) ;
     if (*descriptor == NULL)
     { 
         // out of memory

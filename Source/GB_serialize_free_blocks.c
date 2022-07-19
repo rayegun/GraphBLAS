@@ -33,11 +33,11 @@ void GB_serialize_free_blocks
             { 
                 // free the block
                 GB_void *p = (GB_void *) Blocks [blockid].p ;
-                GB_FREE (&p, p_size_allocated) ;
+                GB_FREE_WORK (&p, p_size_allocated) ;
             }
         }
         // free the Blocks array itself
-        GB_FREE (Blocks_handle, Blocks_size) ;
+        GB_FREE_WORK (Blocks_handle, Blocks_size) ;
     }
 }
 

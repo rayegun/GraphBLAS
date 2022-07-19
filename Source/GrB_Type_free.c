@@ -26,7 +26,7 @@ GrB_Info GrB_Type_free          // free a user-defined type
             { 
                 t->magic = GB_FREED ;  // to help detect dangling pointers
                 t->header_size = 0 ;
-                GB_FREE (type, header_size) ;
+                GB_FREE_WORK (type, header_size) ;
             }
         }
     }

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// GB_mx_string_to_Type.c: return the GrB_type from a string
+// GB_mx_string_to_Type.c: return the GrB_Type from a string
 //------------------------------------------------------------------------------
 
 // SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.

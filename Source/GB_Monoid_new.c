@@ -88,7 +88,7 @@ GrB_Info GB_Monoid_new          // create a monoid
 
     // allocate the monoid
     size_t header_size ;
-    (*monoid) = GB_MALLOC (struct GB_Monoid_opaque, sizeof(struct GB_Monoid_opaque), GrB_UINT8,  &header_size) ;
+    (*monoid) = GB_MALLOC_WORK(1, struct GB_Monoid_opaque, &header_size) ;
     if (*monoid == NULL)
     { 
         // out of memory
@@ -113,12 +113,12 @@ GrB_Info GB_Monoid_new          // create a monoid
     // allocate the identity value
     #define GB_ALLOC_IDENTITY                                               \
     {                                                                       \
-        mon->identity = GB_MALLOC (GB_void, zsize, GrB_UINT8, &(mon->identity_size)) ; \
+        mon->identity = GB_MALLOC_WORK(zsize, GB_void, &(mon->identity_size)) ; \
         if (mon->identity == NULL)                                          \
         {                                                                   \
             /* out of memory */                                             \
-            GB_FREE (&(mon->terminal), mon->terminal_size) ;                \
-            GB_FREE (monoid, header_size) ;                                 \
+            GB_FREE_WORK (&(mon->terminal), mon->terminal_size) ;                \
+            GB_FREE_WORK (monoid, header_size) ;                                 \
             return (GrB_OUT_OF_MEMORY) ;                                    \
         }                                                                   \
     }
@@ -126,12 +126,12 @@ GrB_Info GB_Monoid_new          // create a monoid
     // allocate the terminal value
     #define GB_ALLOC_TERMINAL                                               \
     {                                                                       \
-        mon->terminal = GB_MALLOC (GB_void, zsize, GrB_UINT8, &(mon->terminal_size)) ; \
+        mon->terminal = GB_MALLOC_WORK (zsize, GB_void, &(mon->terminal_size)) ; \
         if (mon->terminal == NULL)                                          \
         {                                                                   \
             /* out of memory */                                             \
-            GB_FREE (&(mon->identity), mon->identity_size) ;                \
-            GB_FREE (monoid, header_size) ;                                 \
+            GB_FREE_WORK (&(mon->identity), mon->identity_size) ;                \
+            GB_FREE_WORK (monoid, header_size) ;                                 \
             return (GrB_OUT_OF_MEMORY) ;                                    \
         }                                                                   \
     }
