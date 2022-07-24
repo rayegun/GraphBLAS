@@ -46,6 +46,7 @@ GrB_Info GB_ix_realloc      // reallocate space in a matrix
 
     if (nzmax_new > GB_NMAX)
     { 
+        printf("Problem too large \n") ;
         // problem too large
         return (GrB_OUT_OF_MEMORY) ;
     }
@@ -57,6 +58,7 @@ GrB_Info GB_ix_realloc      // reallocate space in a matrix
     size_t nzmax_new1 = GB_IMAX (nzmax_new, 1) ;
     bool ok1 = true, ok2 = true ;
     GB_REALLOC (A->i, int64_t, nzmax_new1, GrB_INT64, &(A->i_size), &ok1, Context) ;
+    printf("realloc-ing 1 %d\n", ok1) ;
     if (A->iso)
     { 
         // shrink A->x so it holds a single entry
@@ -67,6 +69,7 @@ GrB_Info GB_ix_realloc      // reallocate space in a matrix
         // reallocate A->x from its current size to nzmax_new1 entries
         GB_REALLOC (A->x, GB_void, nzmax_new1, A->type, &(A->x_size), &ok2,
             Context) ;
+        printf("realloc-ing 2 %d\n", ok2) ;
     }
     bool ok = ok1 && ok2 ;
 

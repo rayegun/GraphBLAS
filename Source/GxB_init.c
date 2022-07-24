@@ -90,7 +90,7 @@ GrB_Info GxB_init           // start up GraphBLAS and also define malloc, etc
 GrB_Info JL_memory_init
 (
     void * (* jl_malloc_function ) (size_t, GrB_Type),
-    void * (* jl_realloc_function ) (void *, size_t) ,
+    void * (* jl_realloc_function ) (void *, GrB_Type, size_t) ,
     void (* jl_free_function )(void *)
 )
 {

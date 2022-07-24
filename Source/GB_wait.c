@@ -53,7 +53,7 @@ GrB_Info GB_wait                // finish all pending computations
     GB_Context Context
 )
 {
-
+    printf("I made it to #1\n") ;
     //--------------------------------------------------------------------------
     // check inputs
     //--------------------------------------------------------------------------
@@ -85,7 +85,7 @@ GrB_Info GB_wait                // finish all pending computations
     //--------------------------------------------------------------------------
     // get the zombie and pending count, and burble if work needs to be done
     //--------------------------------------------------------------------------
-
+    printf("I made it to #2\n") ;
     int64_t nzombies = A->nzombies ;
     int64_t npending = GB_Pending_n (A) ;
     const bool A_iso = A->iso ;
@@ -116,7 +116,7 @@ GrB_Info GB_wait                // finish all pending computations
         }
         return (GrB_SUCCESS) ;
     }
-
+    printf("I made it to #3\n") ;
     //--------------------------------------------------------------------------
     // check if A only needs to be unjumbled
     //--------------------------------------------------------------------------
@@ -137,7 +137,7 @@ GrB_Info GB_wait                // finish all pending computations
 
     int64_t anz_orig = GB_nnz (A) ;
     int64_t asize = A->type->size ;
-
+    printf("I made it to #4\n") ;
     int64_t tnz = 0 ;
     if (npending > 0)
     {
@@ -180,7 +180,7 @@ GrB_Info GB_wait                // finish all pending computations
             stype,                  // type of Pending->x
             Context
         ) ;
-
+        printf("I made it to #5\n") ;
         //----------------------------------------------------------------------
         // free pending tuples
         //----------------------------------------------------------------------
@@ -214,7 +214,7 @@ GrB_Info GB_wait                // finish all pending computations
             GB_FREE_ALL ;
             return (info) ;
         }
-
+        printf("I made it to #6\n") ;
         ASSERT_MATRIX_OK (T, "T = hypersparse matrix of pending tuples", GB0) ;
         ASSERT (GB_IS_HYPERSPARSE (T)) ;
         ASSERT (!GB_ZOMBIES (T)) ;
@@ -258,7 +258,7 @@ GrB_Info GB_wait                // finish all pending computations
     ASSERT (!GB_ZOMBIES (A)) ;
     ASSERT (GB_JUMBLED_OK (A)) ;
     ASSERT (!GB_PENDING (A)) ;
-
+    printf("I made it to #7\n") ;
     //--------------------------------------------------------------------------
     // unjumble the matrix
     //--------------------------------------------------------------------------
@@ -296,7 +296,7 @@ GrB_Info GB_wait                // finish all pending computations
         #pragma omp flush
         return (info) ;
     }
-
+    printf("I made it to #8\n") ;
     //--------------------------------------------------------------------------
     // determine the method for A = A+T
     //--------------------------------------------------------------------------
@@ -339,7 +339,7 @@ GrB_Info GB_wait                // finish all pending computations
         kA = tjfirst ;
         jlast = tjfirst - 1 ;
     }
-
+    printf("I made it to #9\n") ;
     // anz1 = nnz (A1) = nnz (A (:, kA:end)), the region modified by T
     anz0 = A->p [kA] ;
     int64_t anz1 = anz - anz0 ;
@@ -364,7 +364,7 @@ GrB_Info GB_wait                // finish all pending computations
 
         // TODO: if A also had zombies, GB_selector could pad A so that
         // GB_nnz_max (A) is equal to anz + tnz.
-
+        printf("We're at 9.1 \n");
         // make sure A has enough space for the new tuples
         if (anz_new > GB_nnz_max (A))
         { 
@@ -380,7 +380,7 @@ GrB_Info GB_wait                // finish all pending computations
 
         if (anz1 > 0)
         {
-
+            printf("We're at 9.2 \n");
             //------------------------------------------------------------------
             // extract A1 = A (:, kA:end) as a shallow copy
             //------------------------------------------------------------------
@@ -421,7 +421,7 @@ GrB_Info GB_wait                // finish all pending computations
                     a1nvec++ ;
                 }
             }
-
+            printf("We're at 9.3 \n");
             // finalize A1
             A1p [a1nvec] = anz1 ;
             A1->nvec = a1nvec ;
@@ -439,7 +439,7 @@ GrB_Info GB_wait                // finish all pending computations
                 false, NULL, NULL, NULL, Context)) ;
 
             ASSERT_MATRIX_OK (S, "S = A1+T", GB0) ;
-
+            printf("We're at 9.4 \n");
             // free A1 and T
             GB_Matrix_free (&T) ;
             GB_Matrix_free (&A1) ;
@@ -461,7 +461,7 @@ GrB_Info GB_wait                // finish all pending computations
                 A->nvec = kA ;
             }
         }
-
+        printf("We're at 9.5 \n");
         //----------------------------------------------------------------------
         // append T to the end of A0
         //----------------------------------------------------------------------
@@ -483,7 +483,7 @@ GrB_Info GB_wait                // finish all pending computations
             const GB_void *restrict Tx = (GB_void *) T->x ;
             GB_memcpy (Ax + anz * asize, Tx, tnz * asize, nthreads) ;
         }
-
+        printf("We're at 9.6 \n");
         // append the vectors of T to the end of A
         for (int64_t k = 0 ; k < tnvec ; k++)
         { 
@@ -492,7 +492,7 @@ GrB_Info GB_wait                // finish all pending computations
             anz += (Tp [k+1] - Tp [k]) ;
             GB_OK (GB_jappend (A, j, &jlast, anz, &anz_last, Context)) ;
         }
-
+        printf("We're at 9.7 \n");
         GB_jwrapup (A, jlast, anz) ;
         ASSERT (anz == anz_new) ;
 
@@ -502,14 +502,14 @@ GrB_Info GB_wait                // finish all pending computations
         ASSERT_MATRIX_OK (A, "A after GB_wait:append", GB0) ;
 
         GB_Matrix_free (&T) ;
-
+        printf("We're at 9.8 \n");
         // conform A to its desired sparsity structure
         info = GB_conform (A, Context) ;
 
     }
     else
     { 
-
+        printf("I made it to #10\n") ;
         //----------------------------------------------------------------------
         // A = A+T
         //----------------------------------------------------------------------

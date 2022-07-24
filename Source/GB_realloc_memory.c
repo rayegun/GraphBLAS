@@ -214,6 +214,7 @@ void *JL_realloc_memory     // pointer to reallocated block of memory, or
     GB_Context Context
 )
 {
+    printf("nitems_new: %zu\n", nitems_new) ;
 
     if (JL_Global_have_realloc_function() && JL_Global_have_malloc_function()){
         size_t size_of_item = type->size ;
@@ -278,7 +279,8 @@ void *JL_realloc_memory     // pointer to reallocated block of memory, or
         //----------------------------------------------------------------------
         // The realloc function has been provided, and the block is larger
         // than what can be accomodated by the free_pool.
-        pnew = JL_Global_realloc_function (p, nitems_new) ;
+        printf("reallocing using julia\n") ;
+        pnew = JL_Global_realloc_function (p, type, nitems_new) ;
 
         //--------------------------------------------------------------------------
         // check if successful and return result

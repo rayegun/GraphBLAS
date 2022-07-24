@@ -66,8 +66,8 @@ GB_PUBLIC void     GB_Global_abort_function (void) ;
           void  *  JL_Global_malloc_function (size_t nitems, GrB_Type type) ;
           bool     JL_Global_have_malloc_function (void) ;
           void     JL_Global_realloc_function_set
-                        (void * (* realloc_function) (void *, size_t)) ;
-          void  *  JL_Global_realloc_function (void *p, size_t size) ;
+                        (void * (* realloc_function) (void *, GrB_Type, size_t)) ;
+          void  *  JL_Global_realloc_function (void *p, GrB_Type type, size_t size) ;
           bool     JL_Global_have_realloc_function (void) ;
           void     JL_Global_free_function_set
                         (void (* jl_free_function) (void *)) ;

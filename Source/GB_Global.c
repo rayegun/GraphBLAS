@@ -63,7 +63,7 @@ typedef struct
     bool malloc_is_thread_safe ;   // default is true
     #ifdef GB_JULIA
     void * (* jl_malloc_function ) (size_t, GrB_Type) ;
-    void * (* jl_realloc_function ) (void *, size_t) ;
+    void * (* jl_realloc_function ) (void *, GrB_Type, size_t) ;
     void (* jl_free_function )(void *) ;
     #endif
 
@@ -880,7 +880,7 @@ void * GB_Global_realloc_function (void *p, size_t size)
 #ifdef GB_JULIA
 void JL_Global_realloc_function_set
 (
-    void * (* jl_realloc_function) (void *, size_t)
+    void * (* jl_realloc_function) (void *, GrB_Type, size_t)
 )
 {
     GB_Global.jl_realloc_function = jl_realloc_function ;
@@ -891,10 +891,10 @@ bool JL_Global_have_realloc_function (void)
     return (GB_Global.jl_realloc_function != NULL) ;
 }
 
-void * JL_Global_realloc_function (void *p, size_t size)
+void * JL_Global_realloc_function (void *p, GrB_Type type, size_t size)
 { 
     void *pnew = NULL ;
-    pnew = GB_Global.jl_realloc_function (p, size) ;
+    pnew = GB_Global.jl_realloc_function (p, type, size) ;
     return (pnew) ;
 }
 #endif
