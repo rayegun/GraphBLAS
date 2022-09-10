@@ -4,17 +4,18 @@ function codegen_sel
 % This function creates all files of the form GB_sel__*.c,
 % and the include file GB_sel__include.h.
 
-% SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+% SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 % SPDX-License-Identifier: Apache-2.0
 
 fprintf ('\nselection operators:\n') ;
+addpath ('../Test') ;
 
 f = fopen ('Generated1/GB_sel__include.h', 'w') ;
 fprintf (f, '//------------------------------------------------------------------------------\n') ;
 fprintf (f, '// GB_sel__include.h: definitions for GB_sel__*.c\n') ;
 fprintf (f, '//------------------------------------------------------------------------------\n') ;
 fprintf (f, '\n') ;
-fprintf (f, '// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.\n') ;
+fprintf (f, '// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.\n') ;
 fprintf (f, '// SPDX-License-Identifier: Apache-2.0\n\n') ;
 fprintf (f, '// This file has been automatically generated from Generator/GB_sel.h') ;
 fprintf (f, '\n\n') ;

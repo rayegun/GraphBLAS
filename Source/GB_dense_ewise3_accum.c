@@ -2,7 +2,7 @@
 // GB_dense_ewise3_accum: C += A+B where all 3 matries are dense
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -11,7 +11,7 @@
 
 #include "GB_dense.h"
 #include "GB_binop.h"
-#ifndef GBCOMPACT
+#ifndef GBCUDA_DEV
 #include "GB_binop__include.h"
 #endif
 
@@ -24,7 +24,7 @@ void GB_dense_ewise3_accum          // C += A+B, all matrices dense
     GB_Context Context
 )
 {
-#ifndef GBCOMPACT
+#ifndef GBCUDA_DEV
 
     //--------------------------------------------------------------------------
     // check inputs

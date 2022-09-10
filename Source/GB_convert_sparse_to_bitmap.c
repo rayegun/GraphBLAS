@@ -2,13 +2,13 @@
 // GB_convert_sparse_to_bitmap: convert from sparse/hypersparse to bitmap
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
 
 #include "GB_ek_slice.h"
-#ifndef GBCOMPACT
+#ifndef GBCUDA_DEV
 #include "GB_type__include.h"
 #endif
 
@@ -71,7 +71,7 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
     const int64_t anz = GB_nnz (A) ;
     const int64_t avdim = A->vdim ;
     const int64_t avlen = A->vlen ;
-    const int64_t anvec = A->nvec ;
+//  const int64_t anvec = A->nvec ;
     int64_t anzmax ;
     if (!GB_int64_multiply ((GrB_Index *) &anzmax, avdim, avlen))
     { 
@@ -101,8 +101,10 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
     }
     else
     {
-        // A->x must be modified to fit the bitmap structure
-        Ax_new = GB_MALLOC (anzmax * asize, GB_void, &Ax_size) ;
+        // A->x must be modified to fit the bitmap structure.  A->x is calloc'd
+        // since otherwise it would contain uninitialized values where A->b is
+        // false and entries are not present.
+        Ax_new = GB_CALLOC (anzmax * asize, GB_void, &Ax_size) ; // x:OK:calloc
         Ax_shallow = false ;
         if (Ax_new == NULL)
         { 
@@ -160,7 +162,7 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
         else
         {
 
-            #ifndef GBCOMPACT
+            #ifndef GBCUDA_DEV
             {
                 switch (asize)
                 {
@@ -222,7 +224,7 @@ GrB_Info GB_convert_sparse_to_bitmap    // convert sparse/hypersparse to bitmap
         A->x_shallow = false ;
     }
 
-    GB_phbix_free (A) ;
+    GB_phybix_free (A) ;
     A->iso = A_iso ;        // OK: convert_sparse_to_bitmap, keep iso
 
     A->b = Ab ; A->b_size = Ab_size ; A->b_shallow = false ;

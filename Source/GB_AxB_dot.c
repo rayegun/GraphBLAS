@@ -2,7 +2,7 @@
 // GB_AxB_dot: C<M>=A'*B using dot products
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ GrB_Info GB_AxB_dot                 // dot product (multiple methods)
     //--------------------------------------------------------------------------
 
     GrB_Info info ;
-    ASSERT (C != NULL && C->static_header) ;
+    ASSERT (C != NULL && (C->static_header || GBNSTATIC)) ;
 
     ASSERT_MATRIX_OK_OR_NULL (M, "M for dot A'*B", GB0) ;
     ASSERT (!GB_PENDING (M)) ;
@@ -110,7 +110,7 @@ GrB_Info GB_AxB_dot                 // dot product (multiple methods)
             (*done_in_place) = false ;
             (*mask_applied) = false ;
             // set C->iso = true    OK
-            info = GB_new_bix (&C, true,    // static header
+            info = GB_new_bix (&C, // existing header
                 ztype, A->vdim, B->vdim, GB_Ap_null, true, GxB_FULL, false,
                 GB_HYPER_SWITCH_DEFAULT, -1, 1, true, true, Context) ;
             if (info == GrB_SUCCESS)
@@ -153,7 +153,7 @@ GrB_Info GB_AxB_dot                 // dot product (multiple methods)
         // no work to do; C is an empty matrix, normally hypersparse
         GBURBLE ("(empty dot) ") ;
         if (C_in != NULL) return (GrB_SUCCESS) ;
-        return (GB_new (&C, true, // auto sparsity, static header
+        return (GB_new (&C, // auto sparsity, existing header
             ztype, A->vdim, B->vdim, GB_Ap_calloc, true, GxB_AUTO_SPARSITY,
             GB_Global_hyper_switch_get ( ), 1, Context)) ;
     }
@@ -170,29 +170,32 @@ GrB_Info GB_AxB_dot                 // dot product (multiple methods)
         GBURBLE ("(%sdot3) ", iso_kind) ;
         (*mask_applied) = true ;    // mask is always applied
         (*done_in_place) = false ;
+        GrB_Info info ;
+
+        // construct the hyper hashes for A and B
+        GB_OK (GB_hyper_hash_build (A, Context)) ;
+        GB_OK (GB_hyper_hash_build (B, Context)) ;
 
         #if defined ( GBCUDA )
-        if (!C_iso && GB_AxB_dot3_cuda_branch (M, Mask_struct, A, B, semiring,
+        if (!C_iso &&   // FIXME for CUDA, remove and create C iso on output
+            GB_AxB_dot3_cuda_branch (M, Mask_struct, A, B, semiring,
             flipxy, Context))
         {
-            GB_MATRIX_WAIT (M) ;    // make sure it's not jumbled
-            if (GB_AxB_dot3_control (M, Mask_comp))
-            {
-                return (GB_AxB_dot3_cuda (C, M, Mask_struct, A, B, semiring,
-                    flipxy, Context)) ;
-            }
+            info = (GB_AxB_dot3_cuda (C, M, Mask_struct, A, B, semiring,
+                flipxy, Context)) ;
         }
         else
         #endif
         { 
             // use the CPU
-            return (GB_AxB_dot3 (C, C_iso, cscalar, M, Mask_struct, A, B,
+            info = (GB_AxB_dot3 (C, C_iso, cscalar, M, Mask_struct, A, B,
                 semiring, flipxy, Context)) ;
         }
+        return (info) ;
     }
 
     //--------------------------------------------------------------------------
-    // general case: C<M>=A'*B, C<!M>=A'B*, or C=A'*B, not in-place
+    // general case: C<M>=A'*B, C<!M>=A'*B, or C=A'*B, not in-place
     //--------------------------------------------------------------------------
 
     GBURBLE ("(%sdot2) ", iso_kind) ;

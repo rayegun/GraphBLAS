@@ -2,7 +2,7 @@
 // GB_Global: global values in GraphBLAS
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -26,7 +26,8 @@ typedef struct
     // blocking/non-blocking mode, set by GrB_init
     //--------------------------------------------------------------------------
 
-    GrB_Mode mode ;             // GrB_NONBLOCKING or GrB_BLOCKING
+    GrB_Mode mode ;             // GrB_NONBLOCKING, GrB_BLOCKING
+                                // GxB_NONBLOCKING_GPU, or GxB_BLOCKING_GPU
     bool GrB_init_called ;      // true if GrB_init already called
 
     //--------------------------------------------------------------------------
@@ -138,6 +139,13 @@ typedef struct
     int64_t free_pool_limit [64] ;
 
     //--------------------------------------------------------------------------
+    // CPU features
+    //--------------------------------------------------------------------------
+
+    bool cpu_features_avx2 ;        // x86_64 with AVX2
+    bool cpu_features_avx512f ;     // x86_64 with AVX512f
+
+    //--------------------------------------------------------------------------
     // CUDA (DRAFT: in progress)
     //--------------------------------------------------------------------------
 
@@ -156,7 +164,7 @@ GB_Global_struct GB_Global =
 {
 
     // GraphBLAS mode
-    .mode = GrB_NONBLOCKING,    // default is nonblocking
+    .mode = GrB_NONBLOCKING,    // default is nonblocking, no GPU
 
     // initialization flag
     .GrB_init_called = false,   // GrB_init has not yet been called
@@ -331,6 +339,10 @@ GB_Global_struct GB_Global =
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 #endif
 
+    // CPU features
+    .cpu_features_avx2 = false,         // x86_64 with AVX2
+    .cpu_features_avx512f = false,      // x86_64 with AVX512f
+
     // CUDA environment (DRAFT: in progress)
     .gpu_count = 0,                     // # of GPUs in the system
     .gpu_control = GxB_DEFAULT,         // always, never, or default
@@ -370,6 +382,87 @@ GB_PUBLIC
 bool GB_Global_GrB_init_called_get (void)
 { 
     return (GB_Global.GrB_init_called) ;
+}
+
+//------------------------------------------------------------------------------
+// cpu features
+//------------------------------------------------------------------------------
+
+// GB_Global_cpu_features_query is used just once, by GrB_init or GxB_init,
+// to determine at run-time whether or not AVX2 and/or AVX512F is available.
+// Once these two flags are set, they are saved in the GB_Global struct, and
+// can then be queried later by GB_Global_cpu_features_avx*.
+
+GB_PUBLIC
+void GB_Global_cpu_features_query (void)
+{ 
+    #if GBX86
+    {
+
+        //----------------------------------------------------------------------
+        // x86_64 architecture: see if AVX2 and/or AVX512F are supported
+        //----------------------------------------------------------------------
+
+        #if !defined ( GBNCPUFEAT )
+        {
+            // Google's cpu_features package is available: use run-time tests
+            X86Features features = GetX86Info ( ).features ;
+            GB_Global.cpu_features_avx2 = (bool) (features.avx2) ;
+            GB_Global.cpu_features_avx512f = (bool) (features.avx512f) ;
+        }
+        #else
+        {
+            // cpu_features package not available; use compile-time tests
+            #if defined ( GBAVX2 )
+            {
+                // the build system asserts whether or not AVX2 is available
+                GB_Global.cpu_features_avx2 = (bool) (GBAVX2) ;
+            }
+            #else
+            {
+                // AVX2 not available
+                GB_Global.cpu_features_avx2 = false ;
+            }
+            #endif
+            #if defined ( GBAVX512F )
+            {
+                // the build system asserts whether or not AVX512F is available
+                GB_Global.cpu_features_avx512f = (bool) (GBAVX512F) ;
+            }
+            #else
+            {
+                // AVX512F not available
+                GB_Global.cpu_features_avx512f = false ;
+            }
+            #endif
+        }
+        #endif
+
+    }
+    #else
+    {
+
+        //----------------------------------------------------------------------
+        // not on the x86_64 architecture, so no AVX2 or AVX512F acceleration
+        //----------------------------------------------------------------------
+
+        GB_Global.cpu_features_avx2 = false ;
+        GB_Global.cpu_features_avx512f = false ;
+
+    }
+    #endif
+}
+
+GB_PUBLIC
+bool GB_Global_cpu_features_avx2 (void)
+{ 
+    return (GB_Global.cpu_features_avx2) ;
+}
+
+GB_PUBLIC
+bool GB_Global_cpu_features_avx512f (void)
+{ 
+    return (GB_Global.cpu_features_avx512f) ;
 }
 
 //------------------------------------------------------------------------------
@@ -559,7 +652,7 @@ void GB_Global_memtable_add (void *p, size_t size)
     #endif
     #pragma omp critical(GB_memtable)
     {
-        int n = GB_Global.nmemtable  ;
+        int n = GB_Global.nmemtable ;
         fail = (n > GB_MEMTABLE_SIZE) ;
         if (!fail)
         {
@@ -599,7 +692,7 @@ size_t GB_Global_memtable_size (void *p)
     bool found = false ;
     #pragma omp critical(GB_memtable)
     {
-        int n = GB_Global.nmemtable  ;
+        int n = GB_Global.nmemtable ;
         for (int i = 0 ; i < n ; i++)
         {
             if (p == GB_Global.memtable_p [i])
@@ -629,7 +722,7 @@ bool GB_Global_memtable_find (void *p)
     if (p == NULL) return (false) ;
     #pragma omp critical(GB_memtable)
     {
-        int n = GB_Global.nmemtable  ;
+        int n = GB_Global.nmemtable ;
         for (int i = 0 ; i < n ; i++)
         {
             if (p == GB_Global.memtable_p [i])
@@ -660,7 +753,7 @@ void GB_Global_memtable_remove (void *p)
     #endif
     #pragma omp critical(GB_memtable)
     {
-        int n = GB_Global.nmemtable  ;
+        int n = GB_Global.nmemtable ;
         for (int i = 0 ; i < n ; i++)
         {
             if (p == GB_Global.memtable_p [i])
@@ -900,13 +993,13 @@ bool GB_Global_burble_get (void)
 }
 
 GB_PUBLIC
-GB_printf_function_t GB_Global_printf_get ( )
+GB_printf_function_t GB_Global_printf_get (void)
 { 
     return (GB_Global.printf_func) ;
 }
 
 GB_PUBLIC
-GB_flush_function_t GB_Global_flush_get ( )
+GB_flush_function_t GB_Global_flush_get (void)
 { 
     return (GB_Global.flush_func) ;
 }
@@ -1039,35 +1132,35 @@ int GB_Global_gpu_sm_get (int device)
 {
     // get the # of SMs in a specific GPU
     GB_GPU_DEVICE_CHECK (0) ;       // zero if invalid GPU
-    return (GB_Global.gpu_properties [device].number_of_sms)  ;
+    return (GB_Global.gpu_properties [device].number_of_sms) ;
 }
 
-bool GB_Global_gpu_device_pool_size_set( int device, size_t size)
+bool GB_Global_gpu_device_pool_size_set (int device, size_t size)
 {
-    GB_GPU_DEVICE_CHECK (0) ;       // zero if invalid GPU
-    GB_Global.gpu_properties [device].pool_size = (int) size ;
-    return( true); 
+    GB_GPU_DEVICE_CHECK (false) ;   // fail if invalid GPU
+    GB_Global.gpu_properties [device].pool_size = size ;
+    return (true) ; 
 }
 
-bool GB_Global_gpu_device_max_pool_size_set( int device, size_t size)
+bool GB_Global_gpu_device_max_pool_size_set (int device, size_t size)
 {
-    GB_GPU_DEVICE_CHECK (0) ;       // zero if invalid GPU
-    GB_Global.gpu_properties[device].max_pool_size = (int) size ;
-    return( true); 
+    GB_GPU_DEVICE_CHECK (false) ;   // fail if invalid GPU
+    GB_Global.gpu_properties[device].max_pool_size = size ;
+    return (true) ; 
 }
 
-bool GB_Global_gpu_device_memory_resource_set( int device, void *resource)
+bool GB_Global_gpu_device_memory_resource_set (int device, void *resource)
 {
-    GB_GPU_DEVICE_CHECK (0) ;       // zero if invalid GPU
+    GB_GPU_DEVICE_CHECK (false) ;   // fail if invalid GPU
     GB_Global.gpu_properties[device].memory_resource = resource;
-    return( true); 
+    return (true) ; 
 }
 
-void* GB_Global_gpu_device_memory_resource_get( int device )
+void* GB_Global_gpu_device_memory_resource_get (int device)
 {
-    GB_GPU_DEVICE_CHECK (0) ;       // zero if invalid GPU
-    return ( GB_Global.gpu_properties [device].memory_resource ) ;
-    //NOTE: this returns a void*, needs to be cast to be used
+    GB_GPU_DEVICE_CHECK (false) ;   // fail if invalid GPU
+    return  (GB_Global.gpu_properties [device].memory_resource) ;
+    // NOTE: this returns a void*, needs to be cast to be used
 }
 
 bool GB_Global_gpu_device_properties_get (int device)

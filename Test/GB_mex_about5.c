@@ -2,7 +2,7 @@
 // GB_mex_about5: still more basic tests
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -11,7 +11,6 @@
 
 #include "GB_mex.h"
 #include "GB_mex_errors.h"
-#include "GB_dynamic.h"
 #include "GB_serialize.h"
 
 #define USAGE "GB_mex_about5"
@@ -169,7 +168,7 @@ void mexFunction
     GrB_IndexUnaryOp Banded = NULL, UpperBanded = NULL,
         UpperBanded_int64 = NULL, Gunk = NULL, Banded32 = NULL ;
     GrB_Type type = NULL, MyType = NULL, MyInt64 = NULL ;
-    char *err ;
+    const char *err ;
     mytype scalar1 ;
     scalar1.x = 4 ;
     scalar1.y = 3 ;
@@ -187,6 +186,7 @@ void mexFunction
 
     char type_name [GxB_MAX_NAME_LEN] ;
 
+#if 1
     OK (GxB_UnaryOp_xtype_name (type_name, GrB_ABS_INT32)) ;
     CHECK (MATCH (type_name, "int32_t")) ;
     OK (GxB_Type_from_name (&type, type_name)) ;
@@ -432,40 +432,36 @@ void mexFunction
     expected = GrB_NULL_POINTER ;
     ERR (GxB_IndexUnaryOp_fprint (NULL, "nothing", 3, NULL)) ;
     expected = GrB_INVALID_OBJECT ;
-    ERR (GxB_IndexUnaryOp_fprint (GrB_PLUS_FP32, "plus", 3, NULL)) ;
+    ERR (GxB_IndexUnaryOp_fprint ((GrB_IndexUnaryOp) GrB_PLUS_FP32,
+        "plus", 3, NULL)) ;
 
     //--------------------------------------------------------------------------
     // IndexUnaryOp
     //--------------------------------------------------------------------------
 
     expected = GrB_NULL_POINTER ;
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    ERR (GrB_IndexUnaryOp_wait (NULL)) ;
-    ERR (GrB_IndexUnaryOp_wait_ (&Banded)) ;
-    #else
     ERR (GrB_IndexUnaryOp_wait (NULL, GrB_MATERIALIZE)) ;
-    #endif
 
-    OK (GrB_IndexUnaryOp_new (&Banded, banded_idx,
+    OK (GrB_IndexUnaryOp_new (&Banded,
+        (GxB_index_unary_function) banded_idx,
         GrB_BOOL, GrB_INT64, GrB_INT64)) ;
 
-    OK (GrB_IndexUnaryOp_new (&Banded32, banded_idx_32,
+    OK (GrB_IndexUnaryOp_new (&Banded32,
+        (GxB_index_unary_function) banded_idx_32,
         GrB_INT32, GrB_INT64, GrB_INT64)) ;
 
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    OK (GrB_IndexUnaryOp_wait_ (&Banded)) ;
-    #else
     OK (GrB_IndexUnaryOp_wait_ (Banded, GrB_MATERIALIZE)) ;
-    #endif
     OK (GxB_IndexUnaryOp_fprint (Banded, "banded", 3, NULL)) ;
 
     #undef GrB_IndexUnaryOp_new
     #undef GrM_IndexUnaryOp_new
-    OK (GRB (IndexUnaryOp_new) (&UpperBanded, upperbanded_idx,
+    OK (GRB (IndexUnaryOp_new) (&UpperBanded,
+        (GxB_index_unary_function) upperbanded_idx,
         GrB_BOOL, GrB_INT64, GrB_INT64)) ;
     OK (GxB_IndexUnaryOp_fprint (UpperBanded, "upperbanded", 3, NULL)) ;
 
-    OK (GRB (IndexUnaryOp_new) (&UpperBanded_int64, upperbanded_idx_int64,
+    OK (GRB (IndexUnaryOp_new) (&UpperBanded_int64, 
+        (GxB_index_unary_function) upperbanded_idx_int64,
         GrB_INT64, GrB_INT64, GrB_INT64)) ;
     OK (GxB_IndexUnaryOp_fprint (UpperBanded_int64, "upperbanded64", 3, NULL)) ;
 
@@ -502,11 +498,7 @@ void mexFunction
             OK (GxB_Matrix_Option_set_(A, GxB_SPARSITY_CONTROL, GxB_BITMAP)) ;
         }
 
-        #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-        OK (GrB_Matrix_wait (&A)) ;
-        #else
         OK (GrB_Matrix_wait (A, GrB_MATERIALIZE)) ;
-        #endif
         OK (GxB_Matrix_fprint (A, "A", 3, NULL)) ;
 
         OK (GrB_Matrix_new (&C, GrB_INT64, 5, 6)) ;
@@ -695,11 +687,7 @@ void mexFunction
                 OK (GrB_Matrix_setElement_INT64 (A, i*100 + j, i, j)) ;
             }
         }
-        #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-        OK (GrB_Matrix_wait (&A)) ;
-        #else
         OK (GrB_Matrix_wait (A, GrB_MATERIALIZE)) ;
-        #endif
         OK (GxB_Matrix_Option_set_ (A, GxB_SPARSITY_CONTROL, GxB_SPARSE)) ;
         for (int k = 0 ; k <= 1 ; k++)
         {
@@ -749,19 +737,19 @@ void mexFunction
     ERR (GxB_IndexUnaryOp_fprint (Banded, "banded", 3, NULL)) ;
     Banded->ytype = GrB_INT64 ;
 
-    Banded->xtype = GrB_PLUS_FP32 ;
+    Banded->xtype = (GrB_Type) GrB_PLUS_FP32 ;
     ERR (GxB_IndexUnaryOp_fprint (Banded, "banded", 3, NULL)) ;
     Banded->xtype = GrB_INT64 ;
 
     Banded->idxunop_function = NULL ;
     ERR (GxB_IndexUnaryOp_fprint (Banded, "banded", 3, NULL)) ;
-    Banded->idxunop_function = banded_idx ;
+    Banded->idxunop_function = (GxB_index_unary_function) banded_idx ;
 
     Banded->opcode = 0 ;
-    ERR (GB_Operator_check (Banded, "banded", 3, NULL)) ;
+    ERR (GB_Operator_check ((GB_Operator) Banded, "banded", 3, NULL)) ;
     Banded->opcode = GB_USER_idxunop_code ;
 
-    OK (GB_Operator_check (Banded, "banded", 3, NULL)) ;
+    OK (GB_Operator_check ((GB_Operator) Banded, "banded", 3, NULL)) ;
 
     OK (GrB_IndexUnaryOp_error_ (&err, Banded)) ;
     CHECK (MATCH (err, "")) ;
@@ -772,15 +760,17 @@ void mexFunction
     OK (GrB_IndexUnaryOp_free_ (&Banded32)) ;
     OK (GrB_IndexUnaryOp_free_ (&UpperBanded)) ;
     OK (GrB_IndexUnaryOp_free_ (&UpperBanded_int64)) ;
+#endif
 
     //--------------------------------------------------------------------------
     // operator check
     //--------------------------------------------------------------------------
 
-    OK (GB_Operator_check (GrB_PLUS_FP32, "plus", 3, NULL)) ;
-    OK (GB_Operator_check (GrB_ABS_FP32, "abs", 3, NULL)) ;
-    OK (GB_Operator_check (GrB_TRIL, "tril_idx", 3, NULL)) ;
-    OK (GB_Operator_check (GxB_TRIL, "tril_selectop", 3, NULL)) ;
+#if 1
+    OK (GB_Operator_check ((GB_Operator) GrB_PLUS_FP32, "plus", 3, NULL)) ;
+    OK (GB_Operator_check ((GB_Operator) GrB_ABS_FP32, "abs", 3, NULL)) ;
+    OK (GB_Operator_check ((GB_Operator) GrB_TRIL, "tril_idx", 3, NULL)) ;
+    OK (GB_Operator_check ((GB_Operator) GxB_TRIL, "tril_selectop", 3, NULL)) ;
     expected = GrB_NULL_POINTER ;
     ERR (GB_Operator_check (NULL, "null", 3, NULL)) ;
 
@@ -796,72 +786,26 @@ void mexFunction
     OK (GrB_Matrix_free_ (&A)) ;
 
     //--------------------------------------------------------------------------
-    // dynamic header
-    //--------------------------------------------------------------------------
-
-    OK (GrB_Matrix_new (&A, GrB_FP32, 5, 5)) ;
-    OK (GrB_Matrix_setElement_INT64 (A, 2, 0, 0)) ;
-    OK (GrB_Matrix_setElement_INT64 (A, 1, 1, 1)) ;
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    OK (GrB_Matrix_wait_ (&A)) ;
-    #else
-    OK (GrB_Matrix_wait_ (A, GrB_MATERIALIZE)) ;
-    #endif
-    OK (GxB_Matrix_fprint (A, "A for static/dynamic header", 3, NULL)) ;
-    struct GB_Matrix_opaque A2_header ;
-    GrB_Matrix A2 = GB_clear_static_header (&A2_header) ;
-    GB_undo_dynamic_header (NULL, NULL, NULL) ;
-    GB_undo_dynamic_header (&A, A, NULL) ;
-    CHECK (A != NULL) ;
-    OK (GxB_Matrix_fprint (A, "A unchanged", 3, NULL)) ;
-    GB_undo_dynamic_header (&A, A2, NULL) ;
-    OK (GxB_Matrix_fprint (A2, "A2 with static header", 3, NULL)) ;
-    CHECK (A == NULL) ;
-
-    OK (GB_do_dynamic_header (&A, NULL, NULL)) ;
-    CHECK (A == NULL) ;
-
-    OK (GB_do_dynamic_header (&A, A2, NULL)) ;
-    CHECK (A != NULL) ;
-
-    OK (GB_do_dynamic_header (&A, A, NULL)) ;
-    CHECK (A != NULL) ;
-
-    GB_undo_dynamic_header (&A, A2, NULL) ;
-    CHECK (A == NULL) ;
-
-    GB_Global_malloc_debug_count_set (0) ;
-    GB_Global_malloc_debug_set (true) ;
-    expected = GrB_OUT_OF_MEMORY ;
-    ERR (GB_do_dynamic_header (&A, A2, NULL)) ;
-    CHECK (A == NULL) ;
-    GB_Global_malloc_debug_set (false) ;
-
-    OK (GrB_Matrix_free_ (&A2)) ;
-
-    //--------------------------------------------------------------------------
     // apply with user idxunop
     //--------------------------------------------------------------------------
 
     OK (GxB_Type_new (&MyType, sizeof (mytype), "mytype", "")) ;
     OK (GrB_Matrix_new (&A, MyType, 4, 4)) ;
     OK (GrB_Matrix_setElement_UDT (A, &scalar1, 2, 3)) ;
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    OK (GrB_Matrix_wait_ (&A)) ;
-    #else
     OK (GrB_Matrix_wait_ (A, GrB_MATERIALIZE)) ;
-    #endif
     OK (GxB_Matrix_fprint (A, "A of MyType", 3, NULL)) ;
 
     GB_Global_malloc_debug_count_set (0) ;
     GB_Global_malloc_debug_set (true) ;
     expected = GrB_OUT_OF_MEMORY ;
-    ERR (GxB_IndexUnaryOp_new (&Banded, banded_idx,
+    ERR (GxB_IndexUnaryOp_new (&Banded,
+        (GxB_index_unary_function) banded_idx,
         GrB_BOOL, GrB_INT64, GrB_INT64, "banded_index", "")) ;
     CHECK (Banded == NULL) ;
     GB_Global_malloc_debug_set (false) ;
 
-    OK (GxB_IndexUnaryOp_new (&Banded, banded_idx,
+    OK (GxB_IndexUnaryOp_new (&Banded,
+        (GxB_index_unary_function) banded_idx,
         GrB_BOOL, GrB_INT64, GrB_INT64, "banded_index", "")) ;
 
     expected = GrB_DOMAIN_MISMATCH ;
@@ -933,11 +877,7 @@ void mexFunction
     OK (GrB_Matrix_new (&A, GrB_FP32, 3, 4)) ;
     OK (GrB_Matrix_setElement_FP32 (A, (float) 1.1, 2, 2)) ;
     OK (GrB_Matrix_setElement_FP32 (A, (float) 9.1, 1, 1)) ;
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    OK (GrB_Matrix_wait_ (&A)) ;
-    #else
     OK (GrB_Matrix_wait_ (A, GrB_MATERIALIZE)) ;
-    #endif
     OK (GxB_Matrix_fprint (A, "A for serialize", 3, NULL)) ;
     OK (GxB_Matrix_serialize (&blob, &blob_size, A, NULL)) ;
     expected = GrB_DOMAIN_MISMATCH ;
@@ -956,10 +896,13 @@ void mexFunction
     OK (GrB_Matrix_free_ (&C)) ;
     mxFree (blob) ;
 
+#endif
+
     //--------------------------------------------------------------------------
     // descriptor
     //--------------------------------------------------------------------------
 
+#if 1
     OK (GrB_Descriptor_new (&desc)) ;
     OK (GxB_Desc_set (desc, GxB_IMPORT, GxB_SECURE_IMPORT)) ;
     OK (GxB_Descriptor_fprint (desc, "desc with secure import", 3, NULL)) ;
@@ -974,11 +917,13 @@ void mexFunction
 
     OK (GxB_Descriptor_fprint (desc, "desc with secure & lz4hc+4", 3, NULL)) ;
     OK (GrB_Descriptor_free_ (&desc)) ;
+#endif
 
     //--------------------------------------------------------------------------
     // export hint
     //--------------------------------------------------------------------------
 
+#if 1
     OK (GrB_Matrix_new (&A, GrB_FP32, 3, 4)) ;
     OK (GrB_Matrix_assign_FP32 (A, NULL, NULL, (float) 1, GrB_ALL, 3,
         GrB_ALL, 4, NULL)) ;
@@ -1014,7 +959,6 @@ void mexFunction
     OK (GxB_Matrix_Option_set (A, GxB_SPARSITY_CONTROL, GxB_FULL)) ;
     OK (GrB_Matrix_exportHint (&fmt, A)) ;
     CHECK (fmt == GrB_CSC_FORMAT) ;
-//  CHECK (fmt == GrB_DENSE_COL_FORMAT) ;
 
     expected = GrB_NULL_POINTER ;
     ERR (GrB_Matrix_exportHint (NULL, A)) ;
@@ -1022,22 +966,21 @@ void mexFunction
     ERR (GrB_Matrix_exportHint (NULL, NULL)) ;
 
     OK (GrB_Matrix_free_ (&A)) ;
+#endif
 
     //--------------------------------------------------------------------------
     // conform_hyper
     //--------------------------------------------------------------------------
 
+#if 1
     OK (GrB_Matrix_new (&A, GrB_FP32, 100, 100)) ;
     OK (GrB_Matrix_setElement_FP32 (A, 1, 0, 0)) ;
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    OK (GrB_Matrix_wait_ (&A)) ;
-    #else
     OK (GrB_Matrix_wait_ (A, GrB_MATERIALIZE)) ;
-    #endif
     A->nvec_nonempty = -1 ;
     OK (GB_conform_hyper (A, NULL)) ;
     OK (GxB_Matrix_fprint (A, "A conformed", 3, NULL)) ;
     OK (GrB_Matrix_free_ (&A)) ;
+#endif
 
     //--------------------------------------------------------------------------
     // import/export
@@ -1051,14 +994,10 @@ void mexFunction
     float *Ax = mxCalloc (Ax_len, sizeof (float))  ;
     OK (GrB_Matrix_new (&A, GrB_FP32, 4, 4)) ;
     OK (GrB_Matrix_setElement_FP32 (A, 1, 0, 0)) ;
-//  expected = GrB_INVALID_VALUE ;
-//  ERR (GrB_Matrix_export_FP32 (Ap, Ai, Ax, &Ap_len, &Ai_len, &Ax_len, GrB_DENSE_ROW_FORMAT, A)) ;
-//  ERR (GrB_Matrix_export_FP32 (Ap, Ai, Ax, &Ap_len, &Ai_len, &Ax_len, GrB_DENSE_COL_FORMAT, A)) ;
     OK (GrB_Matrix_assign_FP32 (A, NULL, NULL, (float) 2.0, GrB_ALL, 4,
         GrB_ALL, 4, NULL)) ;
     OK (GxB_Matrix_fprint (A, "A iso to export", 3, NULL)) ;
     OK (GrB_Matrix_export_FP32 (Ap, Ai, Ax, &Ap_len, &Ai_len, &Ax_len, GrB_CSC_FORMAT, A)) ;
-//  OK (GrB_Matrix_export_FP32 (Ap, Ai, Ax, &Ap_len, &Ai_len, &Ax_len, GrB_DENSE_COL_FORMAT, A)) ;
     for (int i = 0 ; i < 16 ; i++)
     {
         CHECK (Ax [i] == 2.0) ;
@@ -1115,6 +1054,7 @@ void mexFunction
     // build with duplicates
     //--------------------------------------------------------------------------
 
+#if 1
     GrB_Index *I = mxCalloc (4, sizeof (GrB_Index)) ;
     GrB_Index *J = mxCalloc (4, sizeof (GrB_Index)) ;
     double *X    = mxCalloc (4, sizeof (double)) ;
@@ -1147,28 +1087,32 @@ void mexFunction
     expected = GrB_DOMAIN_MISMATCH ;
 
     printf ("(1)------------------------------------------------\n") ;
-    OK (GRB (IndexUnaryOp_new) (&Gunk, donothing, MyType, MyType, MyType)) ;
+    OK (GRB (IndexUnaryOp_new) (&Gunk, 
+        (GxB_index_unary_function) donothing, MyType, MyType, MyType)) ;
     ERR (GrB_Matrix_select_Scalar (A, NULL, NULL, Gunk, A, scalar, NULL)) ;
     OK (GrB_Matrix_error_ (&err, A)) ;
     printf ("\nexpected error: %s\n", err) ;
     OK (GrB_IndexUnaryOp_free_ (&Gunk)) ;
 
     printf ("(2)------------------------------------------------\n") ;
-    OK (GRB (IndexUnaryOp_new) (&Gunk, donothing, GrB_BOOL, MyType, MyType)) ;
+    OK (GRB (IndexUnaryOp_new) (&Gunk, 
+        (GxB_index_unary_function) donothing, GrB_BOOL, MyType, MyType)) ;
     ERR (GrB_Matrix_select_Scalar (A, NULL, NULL, Gunk, A, scalar, NULL)) ;
     OK (GrB_Matrix_error_ (&err, A)) ;
     printf ("\nexpected error: %s\n", err) ;
     OK (GrB_IndexUnaryOp_free_ (&Gunk)) ;
 
     printf ("(3)------------------------------------------------\n") ;
-    OK (GRB (IndexUnaryOp_new) (&Gunk, donothing, GrB_BOOL, GrB_FP64, MyType)) ;
+    OK (GRB (IndexUnaryOp_new) (&Gunk, 
+        (GxB_index_unary_function) donothing, GrB_BOOL, GrB_FP64, MyType)) ;
     ERR (GrB_Matrix_select_Scalar (A, NULL, NULL, Gunk, A, scalar, NULL)) ;
     OK (GrB_Matrix_error_ (&err, A)) ;
     printf ("\nexpected error: %s\n", err) ;
     OK (GrB_IndexUnaryOp_free_ (&Gunk)) ;
 
     printf ("(4)------------------------------------------------\n") ;
-    OK (GRB (IndexUnaryOp_new) (&Gunk, donothing, MyType, GrB_FP64, GrB_FP64)) ;
+    OK (GRB (IndexUnaryOp_new) (&Gunk, 
+        (GxB_index_unary_function) donothing, MyType, GrB_FP64, GrB_FP64)) ;
     ERR (GrB_Matrix_select_Scalar (A, NULL, NULL, Gunk, A, scalar, NULL)) ;
     OK (GrB_Matrix_error_ (&err, A)) ;
     printf ("\nexpected error: %s\n", err) ;
@@ -1217,7 +1161,8 @@ void mexFunction
     CHECK (anvals == 20) ;
 
     OK (GxB_Type_new (&MyInt64, sizeof (int64_t), "myint64", "")) ;
-    OK (GxB_IndexUnaryOp_new (&Banded, banded_idx,
+    OK (GxB_IndexUnaryOp_new (&Banded,
+        (GxB_index_unary_function) banded_idx,
         GrB_BOOL, GrB_INT64, MyInt64, "banded_index", "")) ;
     OK (GrB_Matrix_assign_FP64 (A, NULL, NULL, (double) 3, GrB_ALL, 5,
         GrB_ALL, 5, NULL)) ;
@@ -1234,7 +1179,7 @@ void mexFunction
     }
     OK (GxB_Vector_fprint (w, "w for select Banded", 3, NULL)) ;
     OK (GrB_Vector_select_UDT (w, NULL, NULL, Banded, w, &one, NULL)) ;
-    OK (GxB_Matrix_fprint (w, "w from select Banded output", 3, NULL)) ;
+    OK (GxB_Vector_fprint (w, "w from select Banded output", 3, NULL)) ;
     OK (GrB_Vector_nvals (&anvals, w)) ;
     CHECK (anvals == 2) ;
 
@@ -1277,7 +1222,8 @@ void mexFunction
     //--------------------------------------------------------------------------
 
     GrB_BinaryOp Add = NULL ;
-    OK (GrB_BinaryOp_new (&Add, add_int64, MyInt64, MyInt64, MyInt64)) ;
+    OK (GrB_BinaryOp_new (&Add,
+        (GxB_binary_function) add_int64, MyInt64, MyInt64, MyInt64)) ;
     int64_t four = 4 ;
     OK (GrB_Matrix_new (&A, MyInt64, 4, 4)) ;
     for (int i = 0 ; i < 4 ; i++)
@@ -1367,7 +1313,9 @@ void mexFunction
             CHECK (aij == i) ;
         }
     }
+
     OK (GrB_Matrix_free_ (&A)) ;
+#endif
 
     //--------------------------------------------------------------------------
     // wrapup

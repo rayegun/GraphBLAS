@@ -2,7 +2,7 @@
 // GB_convert_full_to_sparse: convert a matrix from full to sparse
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -54,6 +54,7 @@ GrB_Info GB_convert_full_to_sparse      // convert matrix from full to sparse
     A->plen = avdim ;
     A->nvec = avdim ;
     A->nvec_nonempty = (avlen == 0) ? 0 : avdim ;
+    A->nvals = anz ;
 
     //--------------------------------------------------------------------------
     // determine the number of threads to use

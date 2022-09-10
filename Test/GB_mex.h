@@ -2,7 +2,7 @@
 // GB_mex.h: definitions for the Test interface to GraphBLAS
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -347,8 +347,7 @@ GrB_Scalar GB_mx_get_Scalar
         if (! (info == GrB_SUCCESS || info == GrB_NO_VALUE))                \
         {                                                                   \
             FREE_ALL ;                                                      \
-            printf ("info: %d\n", info) ;                                   \
-            mexErrMsgTxt ("method failed") ;                                \
+            mexErrMsgIdAndTxt ("GB:test", "method failed, info: %d", info) ;\
         }                                                                   \
     }                                                                       \
     else                                                                    \
@@ -409,8 +408,8 @@ GrB_Scalar GB_mx_get_Scalar
             {                                                               \
                 /* another error has occurred */                            \
                 FREE_ALL ;                                                  \
-                printf ("info: %d\n", info) ; \
-                mexErrMsgTxt ("unexpected error in mex brutal malloc debug") ; \
+                mexErrMsgIdAndTxt ("GB:brutal", "unexpected error in mex "  \
+                    "brutal malloc debug, info: %d", info) ;                \
             }                                                               \
         }                                                                   \
     }

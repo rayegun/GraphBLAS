@@ -2,7 +2,7 @@
 // GB_control.h:  disable hard-coded functions to reduce code size
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -21,11 +21,6 @@
 // 2x or 3x, depending on the operation. but its results will be the same.  A
 // few operations will be 10x slower, such as GrB_reduce to scalar using the
 // GrB_MAX_FP64 operator.
-
-// Enabling the "#define GBCOMPACT" option is the same as uncommenting this
-// entire file.  This file provides a more concise control over which
-// types, operators, and semirings are given fast hard-coded versions in
-// Source/Generated2, and which use the slower generic methods.
 
 // However, the code size can be reduced significantly.  Uncommenting all of
 // the options below cuts the code from 55MB to under 2.7MB, on a MacBook Pro
@@ -244,6 +239,7 @@
 // #define GxB_NO_TGAMMA    1
 // #define GxB_NO_ERF       1
 // #define GxB_NO_ERFC      1
+// #define GxB_NO_CBRT      1
 
 // #define GxB_NO_FREXPX    1
 // #define GxB_NO_FREXPE    1
@@ -2331,7 +2327,8 @@
 //      mult:    (FIRSTI, FIRSTI1, FIRSTJ, FIRSTJ1, SECONDJ, SECONDJ1) x
 //      types:   (int32, int64)
 
-   #define GxB_NO_MIN_FIRSTI_INT32      1
+// enable GxB_MIN_FIRSTI_INT32 for test coverage:
+// #define GxB_NO_MIN_FIRSTI_INT32      1
    #define GxB_NO_MIN_FIRSTI_INT64      1
    #define GxB_NO_MIN_FIRSTI1_INT32     1
    #define GxB_NO_MIN_FIRSTI1_INT64     1

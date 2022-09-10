@@ -2,7 +2,7 @@
 // GB_AxB_rowscale: C = D*B, row scale with diagonal matrix D
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -10,11 +10,11 @@
 #include "GB_mxm.h"
 #include "GB_binop.h"
 #include "GB_apply.h"
-#ifndef GBCOMPACT
+#ifndef GBCUDA_DEV
 #include "GB_binop__include.h"
 #endif
 
-#define GB_FREE_ALL GB_phbix_free (C) ;
+#define GB_FREE_ALL GB_phybix_free (C) ;
 
 GrB_Info GB_AxB_rowscale            // C = D*B, row scale with diagonal D
 (
@@ -32,7 +32,7 @@ GrB_Info GB_AxB_rowscale            // C = D*B, row scale with diagonal D
     //--------------------------------------------------------------------------
 
     GrB_Info info ;
-    ASSERT (C != NULL && C->static_header) ;
+    ASSERT (C != NULL && (C->static_header || GBNSTATIC)) ;
     ASSERT_MATRIX_OK (D, "D for rowscale D*B", GB0) ;
     ASSERT_MATRIX_OK (B, "B for rowscale D*B", GB0) ;
     ASSERT (!GB_ZOMBIES (D)) ;
@@ -203,7 +203,7 @@ GrB_Info GB_AxB_rowscale            // C = D*B, row scale with diagonal D
 
         bool done = false ;
 
-        #ifndef GBCOMPACT
+        #ifndef GBCUDA_DEV
 
             //------------------------------------------------------------------
             // define the worker for the switch factory

@@ -1,3 +1,13 @@
+//------------------------------------------------------------------------------
+// rmm_wrap/rmm_wrap.hpp
+//------------------------------------------------------------------------------
+
+// SPDX-License-Identifier: Apache-2.0
+
+//------------------------------------------------------------------------------
+
+#pragma once
+
 #include "stddef.h"
 //#include <rmm/cuda_stream.hpp>
 //#include <rmm/device_buffer.hpp>
@@ -30,5 +40,5 @@ typedef rmm::mr::pool_memory_resource<pinned_mr> host_pinned_pool_mr;
 typedef rmm::mr::pool_memory_resource<device_mr> device_pool_mr;
 typedef rmm::mr::pool_memory_resource<managed_mr> managed_pool_mr;
 
-
 typedef std::unordered_map< std::size_t, std::size_t> alloc_map;
+

@@ -2,7 +2,7 @@
 // GB_emult_04: C<M>= A.*B, M sparse/hyper, A and B bitmap/full
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -26,7 +26,7 @@
 #include "GB_emult.h"
 #include "GB_binop.h"
 #include "GB_unused.h"
-#ifndef GBCOMPACT
+#ifndef GBCUDA_DEV
 #include "GB_binop__include.h"
 #endif
 
@@ -39,7 +39,7 @@
 #define GB_FREE_ALL                         \
 {                                           \
     GB_FREE_WORKSPACE ;                     \
-    GB_phbix_free (C) ;                     \
+    GB_phybix_free (C) ;                    \
 }
 
 GrB_Info GB_emult_04        // C<M>=A.*B, M sparse/hyper, A and B bitmap/full
@@ -62,7 +62,7 @@ GrB_Info GB_emult_04        // C<M>=A.*B, M sparse/hyper, A and B bitmap/full
     //--------------------------------------------------------------------------
 
     GrB_Info info ;
-    ASSERT (C != NULL && C->static_header) ;
+    ASSERT (C != NULL && (C->static_header || GBNSTATIC)) ;
 
     ASSERT_MATRIX_OK (M, "M for emult_04", GB0) ;
     ASSERT_MATRIX_OK (A, "A for emult_04", GB0) ;
@@ -123,7 +123,7 @@ GrB_Info GB_emult_04        // C<M>=A.*B, M sparse/hyper, A and B bitmap/full
     // allocate C->p and C->h
     //--------------------------------------------------------------------------
 
-    GB_OK (GB_new (&C, true,  // sparse or hyper (same as M), static header
+    GB_OK (GB_new (&C, // sparse or hyper (same as M), existing header
         ctype, vlen, vdim, GB_Ap_calloc, C_is_csc,
         C_sparsity, M->hyper_switch, nvec, Context)) ;
     int64_t *restrict Cp = C->p ;
@@ -234,6 +234,7 @@ GrB_Info GB_emult_04        // C<M>=A.*B, M sparse/hyper, A and B bitmap/full
 
     C->nvec = nvec ;
     C->jumbled = M->jumbled ;
+    C->nvals = cnz ;
     C->magic = GB_MAGIC ;
 
     //--------------------------------------------------------------------------
@@ -292,7 +293,7 @@ GrB_Info GB_emult_04        // C<M>=A.*B, M sparse/hyper, A and B bitmap/full
 
         bool done = false ;
 
-        #ifndef GBCOMPACT
+        #ifndef GBCUDA_DEV
 
             //------------------------------------------------------------------
             // define the worker for the switch factory

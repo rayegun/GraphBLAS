@@ -2,7 +2,7 @@
 // GB_convert_any_to_full: convert any matrix to full
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2022, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ void GB_convert_any_to_full     // convert any matrix to full
     // free A->h, A->p, A->i, and A->b
     //--------------------------------------------------------------------------
 
-    GB_ph_free (A) ;
+    GB_phy_free (A) ;
 
     if (!A->i_shallow) GB_FREE (&(A->i), A->i_size) ;
     A->i = NULL ;
