@@ -87,7 +87,7 @@ InfoAndTape GxB_fwdmxm
     return __enzyme_augmentfwd((void *)GrB_mxm, enzyme_dup, C, dC, enzyme_const, Mask, enzyme_const, accum, enzyme_const, semiring, enzyme_dup, A, dA, enzyme_dup, B, dB, enzyme_const, desc);
 }
 
-void GxB_revmxm
+void GjB_drevmxm
 (
     GrB_Matrix C,
     GrB_Matrix dC,

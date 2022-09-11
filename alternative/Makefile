@@ -26,13 +26,13 @@ VER3 = 0
 # pick your compiler:
 #  CC = gcc
 # CC = cc
- CC = clang-12
+CC = clang-14
 # CC = xlc
 # CC = gcc-8
 # note that -mp1 is essential for icc, for proper Inf and NaN behavior:
 # CC = icc -mp1
 # CC = c++
-
+OPT = opt
 # when using clang
 # CFLAGS += -Xclang
 
@@ -40,7 +40,7 @@ SRC = ../Source/*.c ../Source/Generated1/*.c ../Source/Generated2/*.c
 INC = ../Include/*.h ../Source/*.h ../Source/Template/* ../Source/Generated1/*.h ../Source/Generated2/*.h ../rmm_wrap/*.h*
 SRC2 = $(notdir $(wildcard $(SRC)))
 OBJ = $(SRC2:.c=.o)
-
+LL = $(SRC2:.c=.ll)
 # pick OpenMP options:
 # LDFLAGS = -fopenmp -lm
 # LDFLAGS = -openmp -lm
@@ -53,7 +53,7 @@ CFLAGS += -fopenmp -fexceptions -fPIC
 ifneq ($(CC),c++)
     CFLAGS += -std=c11
 endif
-CPPFLAGS = -I../Include -I../Source -I../Source/Template -I../Source/Generated1 -I../Source/Generated2 -I../lz4 -I../cpu_features/include -I../cpu_features -I../cpu_features/src -I../cpu_features/include/internal -I../rmm_wrap
+CPPFLAGS = -I../Include -I../Source -I../Source/Template -I../Source/Generated1 -I../Source/Generated2 -I../lz4 -I../cpu_features/include -I../cpu_features -I../cpu_features/src -I../cpu_features/include/internal -I../rmm_wrap -I../zstd/zstd_subset -I../zstd
 CFLAGS += -Wno-pragmas
 
 # To compile the libgraphblas_renamed library, change all occurences of
@@ -93,20 +93,27 @@ else
     SO_OPTS += -shared -Wl,-soname -Wl,$(SO_NAME1)
 endif
 
-%.o: ../Source/%.c $(INC)
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $(notdir $@)
 
-%.o: ../Source/Generated1/%.c $(INC)
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $(notdir $@)
+%.ll: ../Source/%.c $(INC)
+	$(CC) $< -S $(CFLAGS) $(CPPFLAGS) -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -o $(notdir $@)
+	$(OPT) $@ --enable-new-pm=0 -load=/opt/homebrew/lib/LLVMEnzyme-14.dylib -enzyme -enzyme-emptyfn-inactive=1 -o $@ -S
+	$(OPT) $@ -O2 -o $@ -S
 
-%.o: ../Source/Generated2/%.c $(INC)
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $(notdir $@)
+%.ll: ../Source/Generated1/%.c $(INC)
+	$(CC) $< -S $(CFLAGS) $(CPPFLAGS) -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -o $(notdir $@)
+	$(OPT) $@ --enable-new-pm=0 -load=/opt/homebrew/lib/LLVMEnzyme-14.dylib -enzyme -enzyme-emptyfn-inactive=1 -o $@ -S
+	$(OPT) $@ -O2 -o $@ -S
+
+%.ll: ../Source/Generated2/%.c $(INC)
+	$(CC) $< -S $(CFLAGS) $(CPPFLAGS) -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -o $(notdir $@)
+	$(OPT) $@ --enable-new-pm=0 -load=/opt/homebrew/lib/LLVMEnzyme-14.dylib -enzyme -enzyme-emptyfn-inactive=1 -o $@ -S
+	$(OPT) $@ -O2 -o $@ -S
 
 library: $(SO_NAME)
 	ln -sf $(SO_NAME) $(SO_NAME0)
 	ln -sf $(SO_NAME) $(SO_NAME1)
 
-$(SO_NAME): $(OBJ)
+$(SO_NAME): $(LL)
 	$(CC) $(SO_OPTS) $^ -o $@
 
 .KEEP: $(OBJ)

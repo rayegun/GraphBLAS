@@ -96,6 +96,6 @@
 #include "GB_convert.h"
 #include "GB_ops.h"
 #include "GB_cuda_gateway.h"
-
+#include "GjB_enzyme.h"
 #endif
 

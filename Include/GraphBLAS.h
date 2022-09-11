@@ -4894,19 +4894,19 @@ GrB_Info GrB_mxm                    // C<Mask> = accum (C, A*B)
     const GrB_Descriptor desc       // descriptor for C, Mask, A, and B
 ) ;
 
+extern int enzyme_dup;
+extern int enzyme_out;
+extern int enzyme_const;
+
 typedef struct InfoAndTape {
     GrB_Info prim;
     GrB_Info shadow;
     void* tape;
 } InfoAndTape;
 
-extern int enzyme_dup;
-extern int enzyme_out;
-extern int enzyme_const;
+void __enzyme_reverse(void*, ...);
 
-InfoAndTape __enzyme_augmentfwd(void *, ...);
-
-GrB_Info __enzyme_reverse(void *, ...);
+InfoAndTape __enzyme_augmentfwd(void*, ...);
 
 GB_PUBLIC InfoAndTape GxB_fwdmxm
 (
@@ -4922,7 +4922,7 @@ GB_PUBLIC InfoAndTape GxB_fwdmxm
     GrB_Descriptor desc
 ) ;
 
-GB_PUBLIC void GxB_revmxm
+GB_PUBLIC void GjB_drevmxm
 (
     GrB_Matrix C,
     GrB_Matrix dC,
@@ -4936,6 +4936,7 @@ GB_PUBLIC void GxB_revmxm
     GrB_Descriptor desc,
     void* tape
 );
+
 
 GB_PUBLIC
 GrB_Info GrB_vxm                    // w'<Mask> = accum (w, u'*A)
