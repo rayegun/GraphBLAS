@@ -138,8 +138,8 @@ message("Found Enzyme at: " ${LLDEnzyme})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fuse-ld=lld -flto")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld -flto")
-set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=${LLDEnzyme}")
-set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=${LLDEnzyme}")
+set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=/home/wimmerer/Enzyme/enzyme/build/Enzyme/LLDEnzyme-14.so")
+set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=/home/wimmerer/Enzyme/enzyme/build/Enzyme/LLDEnzyme-14.so")
 
 #-------------------------------------------------------------------------------
 # find OpenMP, CUDA, RMM, and cpu_features
