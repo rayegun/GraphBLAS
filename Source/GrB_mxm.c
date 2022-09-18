@@ -70,7 +70,7 @@ GrB_Info GrB_mxm                    // C<M> = accum (C, A*B)
     return (info) ;
 }
 
-InfoAndTape GxB_fwdmxm
+InfoAndTape GjB_fwdmxm
 (
     GrB_Matrix C,                   // input/output matrix for results
     GrB_Matrix dC,

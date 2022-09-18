@@ -4908,7 +4908,7 @@ void __enzyme_reverse(void*, ...);
 
 InfoAndTape __enzyme_augmentfwd(void*, ...);
 
-GB_PUBLIC InfoAndTape GxB_fwdmxm
+GB_PUBLIC InfoAndTape GjB_fwdmxm
 (
     GrB_Matrix C,
     GrB_Matrix dC,

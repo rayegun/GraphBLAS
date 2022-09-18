@@ -97,23 +97,23 @@ endif
 %.ll: ../Source/%.c $(INC)
 	$(CC) $< -S $(CFLAGS) $(CPPFLAGS) -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -o $(notdir $@)
 	$(OPT) $@ --enable-new-pm=0 -load=/opt/homebrew/lib/LLVMEnzyme-14.dylib -enzyme -enzyme-emptyfn-inactive=1 -o $@ -S
-	$(OPT) $@ -O2 -o $@ -S
 
 %.ll: ../Source/Generated1/%.c $(INC)
 	$(CC) $< -S $(CFLAGS) $(CPPFLAGS) -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -o $(notdir $@)
 	$(OPT) $@ --enable-new-pm=0 -load=/opt/homebrew/lib/LLVMEnzyme-14.dylib -enzyme -enzyme-emptyfn-inactive=1 -o $@ -S
-	$(OPT) $@ -O2 -o $@ -S
 
 %.ll: ../Source/Generated2/%.c $(INC)
 	$(CC) $< -S $(CFLAGS) $(CPPFLAGS) -emit-llvm -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -o $(notdir $@)
 	$(OPT) $@ --enable-new-pm=0 -load=/opt/homebrew/lib/LLVMEnzyme-14.dylib -enzyme -enzyme-emptyfn-inactive=1 -o $@ -S
-	$(OPT) $@ -O2 -o $@ -S
+
+%.o: %.ll $(INC)
+	$(CC) $< -O2 -o $@ -S
 
 library: $(SO_NAME)
 	ln -sf $(SO_NAME) $(SO_NAME0)
 	ln -sf $(SO_NAME) $(SO_NAME1)
 
-$(SO_NAME): $(LL)
+$(SO_NAME): $(OBJ)
 	$(CC) $(SO_OPTS) $^ -o $@
 
 .KEEP: $(OBJ)

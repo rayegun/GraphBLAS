@@ -4908,7 +4908,7 @@ void __enzyme_reverse(void*, ...);
 
 InfoAndTape __enzyme_augmentfwd(void*, ...);
 
-GB_PUBLIC InfoAndTape GxB_fwdmxm
+GB_PUBLIC InfoAndTape GjB_fwdmxm
 (
     GrB_Matrix C,
     GrB_Matrix dC,
@@ -4936,7 +4936,6 @@ GB_PUBLIC void GjB_drevmxm
     GrB_Descriptor desc,
     void* tape
 );
-
 
 GB_PUBLIC
 GrB_Info GrB_vxm                    // w'<Mask> = accum (w, u'*A)
