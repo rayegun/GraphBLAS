@@ -54,7 +54,7 @@ message("LLVM Version: " ${Enzyme_LLVM_VERSION_MAJOR})
 message("Found LLVM at: " ${Enzyme_LLVM_BINARY_DIR})
 
 set(CMAKE_C_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang")
-set(CMAKE_CXX_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang")
+set(CMAKE_CXX_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang++")
 
 
 #-------------------------------------------------------------------------------
@@ -130,16 +130,16 @@ endif ( )
 # setup ENZYME
 #-------------------------------------------------------------------------------
 
-find_package(Enzyme REQUIRED COMPONENTS ClangEnzyme)
+find_package(Enzyme REQUIRED COMPONENTS LLDEnzyme)
 
-get_target_property(ClangEnzyme ClangEnzyme-${Enzyme_LLVM_VERSION_MAJOR} LOCATION)
+get_target_property(LLDEnzyme LLDEnzyme-${Enzyme_LLVM_VERSION_MAJOR} LOCATION)
 
-message("Found Enzyme at: " ${ClangEnzyme})
+message("Found Enzyme at: " ${LLDEnzyme})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-experimental-new-pass-manager -fuse-ld=lld -flto")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-experimental-new-pass-manager -fuse-ld=lld -flto")
-set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,-mllvm,-load=${ClangEnzyme}")
-set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,-mllvm,-load=${ClangEnzyme}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fuse-ld=lld -flto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld -flto")
+set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=${LLDEnzyme}")
+set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=${LLDEnzyme}")
 
 #-------------------------------------------------------------------------------
 # find OpenMP, CUDA, RMM, and cpu_features
