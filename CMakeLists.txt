@@ -45,6 +45,18 @@ endif ( )
 
 message ( STATUS "GraphBLAS C API: v" "${GraphBLAS_API_VERSION_MAJOR}.${GraphBLAS_API_VERSION_MINOR}, date: ${GraphBLAS_API_DATE}" )
 
+
+#-------------------------------------------------------------------------------
+# find ENZYME
+#-------------------------------------------------------------------------------
+find_package(Enzyme REQUIRED)
+message("LLVM Version: " ${Enzyme_LLVM_VERSION_MAJOR})
+message("Found LLVM at: " ${Enzyme_LLVM_BINARY_DIR})
+
+set(CMAKE_C_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang")
+set(CMAKE_CXX_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang")
+
+
 #-------------------------------------------------------------------------------
 # find CUDA
 #-------------------------------------------------------------------------------
@@ -112,6 +124,22 @@ else ( )
             VERSION "${GraphBLAS_VERSION_MAJOR}.${GraphBLAS_VERSION_MINOR}.${GraphBLAS_VERSION_SUB}"
             LANGUAGES C )
 endif ( )
+
+
+#-------------------------------------------------------------------------------
+# setup ENZYME
+#-------------------------------------------------------------------------------
+
+find_package(Enzyme REQUIRED COMPONENTS ClangEnzyme)
+
+get_target_property(ClangEnzyme ClangEnzyme-${Enzyme_LLVM_VERSION_MAJOR} LOCATION)
+
+message("Found Enzyme at: " ${ClangEnzyme})
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-experimental-new-pass-manager -fuse-ld=lld -flto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-experimental-new-pass-manager -fuse-ld=lld -flto")
+set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,-mllvm,-load=${ClangEnzyme}")
+set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,-mllvm,-load=${ClangEnzyme}")
 
 #-------------------------------------------------------------------------------
 # find OpenMP, CUDA, RMM, and cpu_features
