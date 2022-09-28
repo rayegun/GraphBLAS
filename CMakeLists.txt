@@ -53,10 +53,6 @@ find_package(Enzyme REQUIRED)
 message("LLVM Version: " ${Enzyme_LLVM_VERSION_MAJOR})
 message("Found LLVM at: " ${Enzyme_LLVM_BINARY_DIR})
 
-set(CMAKE_C_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang")
-set(CMAKE_CXX_COMPILER "${Enzyme_LLVM_BINARY_DIR}/bin/clang++")
-
-
 #-------------------------------------------------------------------------------
 # find CUDA
 #-------------------------------------------------------------------------------
@@ -136,10 +132,9 @@ get_target_property(LLDEnzyme LLDEnzyme-${Enzyme_LLVM_VERSION_MAJOR} LOCATION)
 
 message("Found Enzyme at: " ${LLDEnzyme})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fuse-ld=lld -flto")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld -flto")
-set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=/home/wimmerer/Enzyme/enzyme/build/Enzyme/LLDEnzyme-14.so")
-set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -Wl,-mllvm,-load=/home/wimmerer/Enzyme/enzyme/build/Enzyme/LLDEnzyme-14.so")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -flto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -ffast-math -O1")
+set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld -flto -Wl,--lto-legacy-pass-manager -ffast-math -O2 -Wl,-mllvm=--load=${LLDEnzyme} -enzyme -enzyme-print-type -enzyme-print")
 
 #-------------------------------------------------------------------------------
 # find OpenMP, CUDA, RMM, and cpu_features
