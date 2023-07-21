@@ -2,7 +2,7 @@
 // GB_build: build a matrix
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -94,8 +94,8 @@
 
 // The input arrays I, J, and X are not modified.
 
+#define GB_FREE_ALL GrB_Matrix_free (&T) ;
 #include "GB_build.h"
-#define GB_FREE_ALL GB_phbix_free (T) ;
 
 GrB_Info GB_build               // build matrix
 (
@@ -108,7 +108,7 @@ GrB_Info GB_build               // build matrix
     const GrB_Type xtype,       // type of X array
     const bool is_matrix,       // true if C is a matrix, false if GrB_Vector
     const bool X_iso,           // if true the C is iso and X has size 1 entry
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -244,7 +244,7 @@ GrB_Info GB_build               // build matrix
 
     // the type, dimensions, hyper_switch, bitmap_switch and sparsity control
     // are still preserved in C.
-    GB_phbix_free (C) ;
+    GB_phybix_free (C) ;
 
     //--------------------------------------------------------------------------
     // build the matrix T
@@ -262,7 +262,8 @@ GrB_Info GB_build               // build matrix
     int64_t *no_J_work = NULL ; size_t J_work_size = 0 ;
     GB_void *no_X_work = NULL ; size_t X_work_size = 0 ;
     struct GB_Matrix_opaque T_header ;
-    GrB_Matrix T = GB_clear_static_header (&T_header) ;
+    GrB_Matrix T = NULL ;
+    GB_CLEAR_STATIC_HEADER (T, &T_header) ;
     GrB_Type ttype = (discard_duplicates) ? xtype : dup->ztype ;
 
     GB_OK (GB_builder (
@@ -288,7 +289,8 @@ GrB_Info GB_build               // build matrix
         nvals,          // number of tuples
         dup2,           // operator to assemble duplicates (may be NULL)
         xtype,          // type of the X array
-        Context
+        true,           // burble is OK
+        Werk
     )) ;
 
     //--------------------------------------------------------------------------
@@ -319,15 +321,15 @@ GrB_Info GB_build               // build matrix
     // created an iso-valued matrix T, but this is not yet known.  X_iso is
     // false for these methods.  Since it has not yet been conformed to its
     // final sparsity structure, the matrix T is hypersparse, not bitmap.  It
-    // has no zombies or pending tuples, so GB_iso_check does need to handle
+    // has no zombies or pending tuples, so GB_check_if_iso does need to handle
     // those cases.  T->x [0] is the new iso value of T.
 
-    if (!X_iso && GB_iso_check (T, Context))
+    if (!X_iso && GB_check_if_iso (T))
     { 
         // All entries in T are the same; convert T to iso
         GBURBLE ("(post iso) ") ;
         T->iso = true ;
-        GB_OK (GB_convert_any_to_iso (T, NULL, Context)) ;
+        GB_OK (GB_convert_any_to_iso (T, NULL)) ;
     }
 
     //--------------------------------------------------------------------------
@@ -338,6 +340,6 @@ GrB_Info GB_build               // build matrix
     ASSERT (!GB_ZOMBIES (T)) ;
     ASSERT (!GB_JUMBLED (T)) ;
     ASSERT (!GB_PENDING (T)) ;
-    return (GB_transplant_conform (C, C->type, &T, Context)) ;
+    return (GB_transplant_conform (C, C->type, &T, Werk)) ;
 }
 

@@ -2,7 +2,7 @@
 // GrB_Scalar_setElement: set an entry in a GrB_Scalar
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -22,8 +22,8 @@ GrB_Info GB_EVAL2 (GRB (Scalar_setElement_), T)    /* s = x */              \
     GB_WHERE (s, "GrB_Scalar_setElement_" GB_STR(T) " (w, x)") ;            \
     GB_RETURN_IF_NULL_OR_FAULTY (s) ;                                       \
     ASSERT (GB_SCALAR_OK (s)) ;                                             \
-    return (GB_setElement ((GrB_Matrix) s, ampersand x, 0, 0,               \
-        GB_ ## T ## _code, Context)) ;                                      \
+    return (GB_setElement ((GrB_Matrix) s, NULL, ampersand x, 0, 0,         \
+        GB_ ## T ## _code, Werk)) ;                                         \
 }
 
 GB_SET (bool      , BOOL   , &)
@@ -53,8 +53,8 @@ GrB_Info GB_EVAL2 (GXB (Scalar_setElement_), T)    /* s = x */              \
     GB_WHERE (s, "GxB_Scalar_setElement_" GB_STR(T) " (w, x)") ;            \
     GB_RETURN_IF_NULL_OR_FAULTY (s) ;                                       \
     ASSERT (GB_SCALAR_OK (s)) ;                                             \
-    return (GB_setElement ((GrB_Matrix) s, ampersand x, 0, 0,               \
-        GB_ ## T ## _code, Context)) ;                                      \
+    return (GB_setElement ((GrB_Matrix) s, NULL, ampersand x, 0, 0,         \
+        GB_ ## T ## _code, Werk)) ;                                         \
 }
 
 GXB_SET (GxB_FC32_t, FC32  , &)

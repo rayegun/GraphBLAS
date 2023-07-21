@@ -26,31 +26,42 @@
 #include <string>
 #include <fstream>
 
+#undef  JITIFY_PRINT_INSTANTIATION
 #define JITIFY_PRINT_INSTANTIATION 0
+#undef  JITIFY_PRINT_SOURCE
 #define JITIFY_PRINT_SOURCE 1
+#undef  JITIFY_PRINT_LOG
 #define JITIFY_PRINT_LOG 1
+#undef  JITIFY_PRINT_PTX
 #define JITIFY_PRINT_PTX 1
+#undef  JITIFY_PRINT_LINKER_LOG
 #define JITIFY_PRINT_LINKER_LOG 0
+#undef  JITIFY_PRINT_LAUNCH
 #define JITIFY_PRINT_LAUNCH 1
-#include <jitify.hpp>
+#include "jitify.hpp"
 
-const std::vector<std::string> compiler_flags{
-   "-std=c++14",
-   "--use_fast_math",
-   "-remove-unused-globals",
-   "-w",
-   "-D__CUDACC_RTC__",
-   "-I.",
-   "-I..",
-   "-I../../Include",
-   "-I../../Source",
-   "-I../../Source/Template",
-   "-Ilocal_cub/block",
-   "-Itemplates",
-   "-I/usr/local/cuda/include"
-};
 
 namespace jit {
+
+#if 0
+const std::vector<std::string> GB_jit_cuda_compiler_flags{
+    "-std=c++17",
+            "--use_fast_math",
+            "-remove-unused-globals",
+            "-w",
+            "-lcudart",
+            "-D__CUDACC_RTC__",
+            "-I.",
+            "-I..",
+            "-I../../Include",
+            "-I../../Source",
+            "-I../../Source/Template",
+//          "-Ilocal_cub/block",
+            "-Itemplates",
+            "-I/usr/local/cuda/include" // FIXME: remove this?
+};
+#endif
+
 
 /**
  * @brief Class used to handle compilation and execution of JIT kernels
@@ -116,8 +127,8 @@ class launcher {
    * @tparam grid and block sizes 
    * @return Return launcher reference if successful
    */
-  jitify::experimental::KernelLauncher configure( dim3 grid, dim3 block){
-    return get_kernel().configure( grid, block); 
+  jitify::experimental::KernelLauncher configure( dim3 grid, dim3 block, unsigned int smem = 0, cudaStream_t stream = 0){
+    return get_kernel().configure( grid, block, smem, stream);
     //return get_kernel().configure_1d_max_occupancy( max_block_size=block.x); 
   }
 
@@ -130,7 +141,7 @@ class launcher {
    * @return Return GDF_SUCCESS if successful
    */
   template <typename ... Args>
-  void launch(Args ... args){
+  void launch(Args ... args) {
     get_kernel().configure_1d_max_occupancy(32, 0, 0, stream).launch(args...);
   }
 

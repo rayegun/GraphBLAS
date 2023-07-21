@@ -2,14 +2,14 @@
 // GrB_Vector_select: select entries from a vector using a GrB_IndexUnaryOp
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
 
 #include "GB_select.h"
 #include "GB_get_mask.h"
-#include "GB_scalar.h"
+#include "GB_scalar_wrap.h"
 
 //------------------------------------------------------------------------------
 // GB_sel: select using a GrB_IndexUnaryOp
@@ -24,7 +24,7 @@ static inline GrB_Info GB_sel   // w<M> = accum (w, select(w,k))
     const GrB_Vector u,             // first input:  vector u
     const GrB_Scalar Thunk,         // optional input for select operator
     const GrB_Descriptor desc,      // descriptor for w and M
-    GB_Context Context
+    GB_Werk Werk
 )
 { 
 
@@ -52,11 +52,11 @@ static inline GrB_Info GB_sel   // w<M> = accum (w, select(w,k))
         (GrB_Matrix) w, C_replace,  // w and its descriptor
         M, Mask_comp, Mask_struct,  // mask and its descriptor
         accum,                      // optional accum for Z=accum(w,T)
-        (GB_Operator) op,           // operator to select the entries
+        op,                         // operator to select the entries
         (GrB_Matrix) u,             // first input: u
         Thunk,                      // optional input for select operator
         false,                      // vector u is never transposed
-        Context) ;
+        Werk) ;
 
     GB_BURBLE_END ;
     return (info) ;
@@ -81,22 +81,22 @@ GrB_Info GB_EVAL3 (prefix, _Vector_select_, T)                              \
     GB_WHERE (w, GB_STR(prefix) "_Vector_select_" GB_STR(T)                 \
         " (w, M, accum, op, u, thunk, desc)") ;                             \
     GB_SCALAR_WRAP (Thunk, thunk, GB_EVAL3 (prefix, _, T)) ;                \
-    return (GB_sel (w, M, accum, op, u, Thunk, desc, Context)) ;            \
+    return (GB_sel (w, M, accum, op, u, Thunk, desc, Werk)) ;               \
 }
 
-GB_SEL (GrB, bool      , BOOL  ) ;
-GB_SEL (GrB, int8_t    , INT8  ) ;
-GB_SEL (GrB, int16_t   , INT16 ) ;
-GB_SEL (GrB, int32_t   , INT32 ) ;
-GB_SEL (GrB, int64_t   , INT64 ) ;
-GB_SEL (GrB, uint8_t   , UINT8 ) ;
-GB_SEL (GrB, uint16_t  , UINT16) ;
-GB_SEL (GrB, uint32_t  , UINT32) ;
-GB_SEL (GrB, uint64_t  , UINT64) ;
-GB_SEL (GrB, float     , FP32  ) ;
-GB_SEL (GrB, double    , FP64  ) ;
-GB_SEL (GxB, GxB_FC32_t, FC32  ) ;
-GB_SEL (GxB, GxB_FC64_t, FC64  ) ;
+GB_SEL (GrB, bool      , BOOL  )
+GB_SEL (GrB, int8_t    , INT8  )
+GB_SEL (GrB, int16_t   , INT16 )
+GB_SEL (GrB, int32_t   , INT32 )
+GB_SEL (GrB, int64_t   , INT64 )
+GB_SEL (GrB, uint8_t   , UINT8 )
+GB_SEL (GrB, uint16_t  , UINT16)
+GB_SEL (GrB, uint32_t  , UINT32)
+GB_SEL (GrB, uint64_t  , UINT64)
+GB_SEL (GrB, float     , FP32  )
+GB_SEL (GrB, double    , FP64  )
+GB_SEL (GxB, GxB_FC32_t, FC32  )
+GB_SEL (GxB, GxB_FC64_t, FC64  )
 
 //------------------------------------------------------------------------------
 // GrB_Vector_select_UDT: select entries from vector (thunk: user-defined type)
@@ -115,7 +115,7 @@ GrB_Info GrB_Vector_select_UDT
 { 
     GB_WHERE (w, "GrB_Vector_select_UDT (w, M, accum, op, u, thunk, desc)") ;
     GB_SCALAR_WRAP_UDT (Thunk, thunk, (op == NULL) ? NULL : op->ytype) ;
-    return (GB_sel (w, M, accum, op, u, Thunk, desc, Context)) ;
+    return (GB_sel (w, M, accum, op, u, Thunk, desc, Werk)) ;
 }
 
 //------------------------------------------------------------------------------
@@ -134,6 +134,6 @@ GrB_Info GrB_Vector_select_Scalar
 )
 { 
     GB_WHERE (w, "GrB_Vector_select_Scalar (w, M, accum, op, u, thunk, desc)") ;
-    return (GB_sel (w, M, accum, op, u, Thunk, desc, Context)) ;
+    return (GB_sel (w, M, accum, op, u, Thunk, desc, Werk)) ;
 }
 

@@ -2,10 +2,12 @@
 // GB_emult_08_phase0: find vectors of C to compute for C=A.*B or C<M>=A.*B
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
+
+// JIT: not needed.  Only one variant possible.
 
 // The eWise multiply of two matrices, C=A.*B, C<M>=A.*B, or C<!M>=A.*B starts
 // with this phase, which determines which vectors of C need to be computed.
@@ -36,6 +38,13 @@
 
 // FUTURE:: exploit A==M, B==M, and A==B aliases
 
+#define GB_FREE_ALL                             \
+{                                               \
+    GB_FREE_WORK (&C_to_M, C_to_M_size) ;       \
+    GB_FREE_WORK (&C_to_A, C_to_A_size) ;       \
+    GB_FREE_WORK (&C_to_B, C_to_B_size) ;       \
+}
+
 #include "GB_emult.h"
 
 GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
@@ -54,7 +63,7 @@ GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
     const GrB_Matrix M,         // optional mask, may be NULL
     const GrB_Matrix A,
     const GrB_Matrix B,
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -64,6 +73,7 @@ GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
 
     // M, A, and B can be jumbled for this phase
 
+    GrB_Info info ;
     ASSERT (p_Cnvec != NULL) ;
     ASSERT (Ch_handle != NULL) ;
     ASSERT (Ch_size_handle != NULL) ;
@@ -392,7 +402,8 @@ GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
     // determine the number of threads to use
     //--------------------------------------------------------------------------
 
-    GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
+    int nthreads_max = GB_Context_nthreads_max ( ) ;
+    double chunk = GB_Context_chunk ( ) ;
     int nthreads = GB_nthreads (Cnvec, chunk, nthreads_max) ;
 
     //--------------------------------------------------------------------------
@@ -402,25 +413,33 @@ GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
     if (M_is_hyper && Ch != Mh)
     {
         // allocate C_to_M
+        ASSERT (Ch != NULL) ;
         C_to_M = GB_MALLOC_WORK (Cnvec, int64_t, &C_to_M_size) ;
         if (C_to_M == NULL)
         { 
             // out of memory
+            GB_FREE_ALL ;
             return (GrB_OUT_OF_MEMORY) ;
         }
 
-        // compute C_to_M
-        ASSERT (Ch != NULL) ;
+        // create the M->Y hyper_hash
+        GB_OK (GB_hyper_hash_build (M, Werk)) ;
 
         const int64_t *restrict Mp = M->p ;
+        const int64_t *restrict M_Yp = M->Y->p ;
+        const int64_t *restrict M_Yi = M->Y->i ;
+        const int64_t *restrict M_Yx = M->Y->x ;
+        const int64_t M_hash_bits = M->Y->vdim - 1 ;
 
+        // compute C_to_M
         int64_t k ;
         #pragma omp parallel for num_threads(nthreads) schedule(static)
         for (k = 0 ; k < Cnvec ; k++)
         { 
-            int64_t pM, pM_end, kM = 0 ;
+            int64_t pM, pM_end ;
             int64_t j = Ch [k] ;
-            GB_lookup (true, Mh, Mp, vlen, &kM, Mnvec-1, j, &pM, &pM_end) ;
+            int64_t kM = GB_hyper_hash_lookup (Mp, M_Yp, M_Yi, M_Yx,
+                M_hash_bits, j, &pM, &pM_end) ;
             C_to_M [k] = (pM < pM_end) ? kM : -1 ;
         }
     }
@@ -432,25 +451,33 @@ GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
     if (A_is_hyper && Ch != Ah)
     {
         // allocate C_to_A
+        ASSERT (Ch != NULL) ;
         C_to_A = GB_MALLOC_WORK (Cnvec, int64_t, &C_to_A_size) ;
         if (C_to_A == NULL)
         { 
             // out of memory
-            GB_FREE_WORK (&C_to_M, C_to_M_size) ;
+            GB_FREE_ALL ;
             return (GrB_OUT_OF_MEMORY) ;
         }
 
-        // compute C_to_A
-        ASSERT (Ch != NULL) ;
-        const int64_t *restrict Ap = A->p ;
+        // create the A->Y hyper_hash
+        GB_OK (GB_hyper_hash_build (A, Werk)) ;
 
+        const int64_t *restrict Ap = A->p ;
+        const int64_t *restrict A_Yp = A->Y->p ;
+        const int64_t *restrict A_Yi = A->Y->i ;
+        const int64_t *restrict A_Yx = A->Y->x ;
+        const int64_t A_hash_bits = A->Y->vdim - 1 ;
+
+        // compute C_to_A
         int64_t k ;
         #pragma omp parallel for num_threads(nthreads) schedule(static)
         for (k = 0 ; k < Cnvec ; k++)
         { 
-            int64_t pA, pA_end, kA = 0 ;
+            int64_t pA, pA_end ;
             int64_t j = Ch [k] ;
-            GB_lookup (true, Ah, Ap, vlen, &kA, Anvec-1, j, &pA, &pA_end) ;
+            int64_t kA = GB_hyper_hash_lookup (Ap, A_Yp, A_Yi, A_Yx,
+                A_hash_bits, j, &pA, &pA_end) ;
             C_to_A [k] = (pA < pA_end) ? kA : -1 ;
         }
     }
@@ -462,26 +489,33 @@ GrB_Info GB_emult_08_phase0     // find vectors in C for C=A.*B or C<M>=A.*B
     if (B_is_hyper && Ch != Bh)
     {
         // allocate C_to_B
+        ASSERT (Ch != NULL) ;
         C_to_B = GB_MALLOC_WORK (Cnvec, int64_t, &C_to_B_size) ;
         if (C_to_B == NULL)
         { 
             // out of memory
-            GB_FREE_WORK (&C_to_M, C_to_M_size) ;
-            GB_FREE_WORK (&C_to_A, C_to_A_size) ;
+            GB_FREE_ALL ;
             return (GrB_OUT_OF_MEMORY) ;
         }
 
-        // compute C_to_B
-        ASSERT (Ch != NULL) ;
-        const int64_t *restrict Bp = B->p ;
+        // create the B->Y hyper_hash
+        GB_OK (GB_hyper_hash_build (B, Werk)) ;
 
+        const int64_t *restrict Bp = B->p ;
+        const int64_t *restrict B_Yp = B->Y->p ;
+        const int64_t *restrict B_Yi = B->Y->i ;
+        const int64_t *restrict B_Yx = B->Y->x ;
+        const int64_t B_hash_bits = B->Y->vdim - 1 ;
+
+        // compute C_to_B
         int64_t k ;
         #pragma omp parallel for num_threads(nthreads) schedule(static)
         for (k = 0 ; k < Cnvec ; k++)
         { 
-            int64_t pB, pB_end, kB = 0 ;
+            int64_t pB, pB_end ;
             int64_t j = Ch [k] ;
-            GB_lookup (true, Bh, Bp, vlen, &kB, Bnvec-1, j, &pB, &pB_end) ;
+            int64_t kB = GB_hyper_hash_lookup (Bp, B_Yp, B_Yi, B_Yx,
+                B_hash_bits, j, &pB, &pB_end) ;
             C_to_B [k] = (pB < pB_end) ? kB : -1 ;
         }
     }

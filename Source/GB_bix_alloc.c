@@ -2,32 +2,22 @@
 // GB_bix_alloc: allocate a matrix to hold a given number of entries
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
 
-// Does not modify A->p or A->h (unless an error occurs).  Frees A->b, A->x,
+// Does not modify A->p or A->h.  Frees A->b, A->x,
 // and A->i and reallocates them to the requested size.  Frees any pending
 // tuples and deletes all entries (including zombies, if any).  If numeric is
 // false, then A->x is freed but not reallocated.
 
-// If this method fails, all content of A is freed (including A->p and A->h).
+// If this method fails, A->b, A->i, and A->x are NULL,
+// but A->p and A->h are not modified.
 
 #include "GB.h"
 
-GB_PUBLIC
-GrB_Info GB_bix_alloc       // allocate A->b, A->i, and A->x space in a matrix
-(
-    GrB_Matrix A,           // matrix to allocate space for
-    const GrB_Index nzmax,  // number of entries the matrix can hold;
-                            // ignored if A is iso and full
-    const int sparsity,     // sparse (=hyper/auto) / bitmap / full
-    const bool bitmap_calloc,   // if true, calloc A->b, otherwise use malloc
-    const bool numeric,     // if true, allocate A->x, otherwise A->x is NULL
-    const bool A_iso,       // if true, allocate A as iso
-    GB_Context Context
-)
+GB_CALLBACK_BIX_ALLOC_PROTO (GB_bix_alloc)
 {
 
     //--------------------------------------------------------------------------
@@ -71,14 +61,16 @@ GrB_Info GB_bix_alloc       // allocate A->b, A->i, and A->x space in a matrix
 
     if (numeric)
     { 
-        A->x = GB_XALLOC (A_iso, nzmax, A->type->size, &(A->x_size)) ;
+        // calloc the space if A is bitmap
+        A->x = GB_XALLOC (sparsity == GxB_BITMAP, A_iso,    // x:OK
+            nzmax, A->type->size, &(A->x_size)) ;
         ok = ok && (A->x != NULL) ;
     }
 
     if (!ok)
     { 
         // out of memory
-        GB_phbix_free (A) ;
+        GB_bix_free (A) ;
         return (GrB_OUT_OF_MEMORY) ;
     }
 

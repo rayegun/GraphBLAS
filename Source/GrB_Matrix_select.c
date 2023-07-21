@@ -2,7 +2,7 @@
 // GrB_Matrix_select: select entries from a matrix using a GrB_IndexUnaryOp
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -11,7 +11,7 @@
 
 #include "GB_select.h"
 #include "GB_get_mask.h"
-#include "GB_scalar.h"
+#include "GB_scalar_wrap.h"
 
 //------------------------------------------------------------------------------
 // GB_sel: select using a GrB_IndexUnaryOp
@@ -26,7 +26,7 @@ static inline GrB_Info GB_sel   // C<M> = accum (C, select(A,k)) or select(A',k)
     const GrB_Matrix A,             // first input:  matrix A
     const GrB_Scalar Thunk,         // optional input for select operator
     const GrB_Descriptor desc,      // descriptor for C, M, and A
-    GB_Context Context
+    GB_Werk Werk
 )
 { 
 
@@ -54,11 +54,11 @@ static inline GrB_Info GB_sel   // C<M> = accum (C, select(A,k)) or select(A',k)
         C, C_replace,               // C and its descriptor
         M, Mask_comp, Mask_struct,  // mask and its descriptor
         accum,                      // optional accum for Z=accum(C,T)
-        (GB_Operator) op,           // operator to select the entries
+        op,                         // operator to select the entries
         A,                          // first input: A
         Thunk,                      // optional input for select operator
         A_transpose,                // descriptor for A
-        Context) ;
+        Werk) ;
 
     GB_BURBLE_END ;
     return (info) ;
@@ -83,22 +83,22 @@ GrB_Info GB_EVAL3 (prefix, _Matrix_select_, T)                              \
     GB_WHERE (C, GB_STR(prefix) "_Matrix_select_" GB_STR(T)                 \
         " (C, M, accum, op, A, thunk, desc)") ;                             \
     GB_SCALAR_WRAP (Thunk, thunk, GB_EVAL3 (prefix, _, T)) ;                \
-    return (GB_sel (C, M, accum, op, A, Thunk, desc, Context)) ;            \
+    return (GB_sel (C, M, accum, op, A, Thunk, desc, Werk)) ;               \
 }
 
-GB_SEL (GrB, bool      , BOOL  ) ;
-GB_SEL (GrB, int8_t    , INT8  ) ;
-GB_SEL (GrB, int16_t   , INT16 ) ;
-GB_SEL (GrB, int32_t   , INT32 ) ;
-GB_SEL (GrB, int64_t   , INT64 ) ;
-GB_SEL (GrB, uint8_t   , UINT8 ) ;
-GB_SEL (GrB, uint16_t  , UINT16) ;
-GB_SEL (GrB, uint32_t  , UINT32) ;
-GB_SEL (GrB, uint64_t  , UINT64) ;
-GB_SEL (GrB, float     , FP32  ) ;
-GB_SEL (GrB, double    , FP64  ) ;
-GB_SEL (GxB, GxB_FC32_t, FC32  ) ;
-GB_SEL (GxB, GxB_FC64_t, FC64  ) ;
+GB_SEL (GrB, bool      , BOOL  )
+GB_SEL (GrB, int8_t    , INT8  )
+GB_SEL (GrB, int16_t   , INT16 )
+GB_SEL (GrB, int32_t   , INT32 )
+GB_SEL (GrB, int64_t   , INT64 )
+GB_SEL (GrB, uint8_t   , UINT8 )
+GB_SEL (GrB, uint16_t  , UINT16)
+GB_SEL (GrB, uint32_t  , UINT32)
+GB_SEL (GrB, uint64_t  , UINT64)
+GB_SEL (GrB, float     , FP32  )
+GB_SEL (GrB, double    , FP64  )
+GB_SEL (GxB, GxB_FC32_t, FC32  )
+GB_SEL (GxB, GxB_FC64_t, FC64  )
 
 //------------------------------------------------------------------------------
 // GrB_Matrix_select_UDT: select entries from matrix (thunk: user-defined type)
@@ -117,7 +117,7 @@ GrB_Info GrB_Matrix_select_UDT
 { 
     GB_WHERE (C, "GrB_Matrix_select_UDT (C, M, accum, op, A, thunk, desc)") ;
     GB_SCALAR_WRAP_UDT (Thunk, thunk, (op == NULL) ? NULL : op->ytype) ;
-    return (GB_sel (C, M, accum, op, A, Thunk, desc, Context)) ;
+    return (GB_sel (C, M, accum, op, A, Thunk, desc, Werk)) ;
 }
 
 //------------------------------------------------------------------------------
@@ -136,6 +136,6 @@ GrB_Info GrB_Matrix_select_Scalar
 )
 { 
     GB_WHERE (C, "GrB_Matrix_select_Scalar (C, M, accum, op, A, thunk, desc)") ;
-    return (GB_sel (C, M, accum, op, A, Thunk, desc, Context)) ;
+    return (GB_sel (C, M, accum, op, A, Thunk, desc, Werk)) ;
 }
 

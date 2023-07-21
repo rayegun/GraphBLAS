@@ -2,10 +2,12 @@
 // GB_subassign_10_and_18: C(I,J)<M or !M,repl> = A ; using S
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
+
+// JIT: needed.
 
 // Method 10: C(I,J)<M,repl> = A ; using S
 // Method 18: C(I,J)<!M,repl> = A ; using S
@@ -21,6 +23,7 @@
 // M, A: any sparsity structure.
 
 #include "GB_subassign_methods.h"
+#include "GB_assign_shared_definitions.h"
 
 GrB_Info GB_subassign_10_and_18
 (
@@ -40,7 +43,7 @@ GrB_Info GB_subassign_10_and_18
     const bool Mask_struct,         // if true, use the only structure of M
     const bool Mask_comp,           // if true, !M, else use M
     const GrB_Matrix A,
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -49,15 +52,16 @@ GrB_Info GB_subassign_10_and_18
     //--------------------------------------------------------------------------
 
     ASSERT (!GB_IS_BITMAP (C)) ; ASSERT (!GB_IS_FULL (C)) ;
-    ASSERT (!GB_aliased (C, M)) ;   // NO ALIAS of C==M
-    ASSERT (!GB_aliased (C, A)) ;   // NO ALIAS of C==A
+    ASSERT (!GB_any_aliased (C, M)) ;   // NO ALIAS of C==M
+    ASSERT (!GB_any_aliased (C, A)) ;   // NO ALIAS of C==A
 
     //--------------------------------------------------------------------------
     // S = C(I,J)
     //--------------------------------------------------------------------------
 
     GB_EMPTY_TASKLIST ;
-    GB_OK (GB_subassign_symbolic (S, C, I, ni, J, nj, true, Context)) ;
+    GB_CLEAR_STATIC_HEADER (S, &S_header) ;
+    GB_OK (GB_subassign_symbolic (S, C, I, ni, J, nj, true, Werk)) ;
 
     //--------------------------------------------------------------------------
     // get inputs
@@ -68,6 +72,7 @@ GrB_Info GB_subassign_10_and_18
 
     GB_GET_C ;      // C must not be bitmap
     GB_GET_MASK ;
+    GB_GET_MASK_HYPER_HASH ;
     GB_GET_A ;
     GB_GET_S ;
     GrB_BinaryOp accum = NULL ;
@@ -129,7 +134,7 @@ GrB_Info GB_subassign_10_and_18
                 // get S(iA_start:iA_end,j)
                 //--------------------------------------------------------------
 
-                GB_GET_VECTOR_FOR_IXJ (S, iA_start) ;
+                GB_LOOKUP_VECTOR_FOR_IXJ (S, iA_start) ;
                 int64_t pA_start = j * Avlen ;
 
                 //--------------------------------------------------------------
@@ -137,7 +142,7 @@ GrB_Info GB_subassign_10_and_18
                 //--------------------------------------------------------------
 
                 int64_t pM_start, pM_end ;
-                GB_VECTOR_LOOKUP (pM_start, pM_end, M, j) ;
+                GB_LOOKUP_VECTOR (pM_start, pM_end, M, j) ;
                 bool mjdense = (pM_end - pM_start) == Mvlen ;
 
                 //--------------------------------------------------------------
@@ -241,7 +246,7 @@ GrB_Info GB_subassign_10_and_18
                 //--------------------------------------------------------------
 
                 int64_t pM_start, pM_end ;
-                GB_VECTOR_LOOKUP (pM_start, pM_end, M, j) ;
+                GB_LOOKUP_VECTOR (pM_start, pM_end, M, j) ;
                 bool mjdense = (pM_end - pM_start) == Mvlen ;
 
                 //--------------------------------------------------------------
@@ -376,7 +381,7 @@ GrB_Info GB_subassign_10_and_18
                 // get S(iA_start:iA_end,j)
                 //--------------------------------------------------------------
 
-                GB_GET_VECTOR_FOR_IXJ (S, iA_start) ;
+                GB_LOOKUP_VECTOR_FOR_IXJ (S, iA_start) ;
                 int64_t pA_start = j * Avlen ;
 
                 //--------------------------------------------------------------
@@ -384,7 +389,7 @@ GrB_Info GB_subassign_10_and_18
                 //--------------------------------------------------------------
 
                 int64_t pM_start, pM_end ;
-                GB_VECTOR_LOOKUP (pM_start, pM_end, M, j) ;
+                GB_LOOKUP_VECTOR (pM_start, pM_end, M, j) ;
                 bool mjdense = (pM_end - pM_start) == Mvlen ;
 
                 //--------------------------------------------------------------
@@ -461,7 +466,7 @@ GrB_Info GB_subassign_10_and_18
                 //--------------------------------------------------------------
 
                 int64_t pM_start, pM_end ;
-                GB_VECTOR_LOOKUP (pM_start, pM_end, M, j) ;
+                GB_LOOKUP_VECTOR (pM_start, pM_end, M, j) ;
                 bool mjdense = (pM_end - pM_start) == Mvlen ;
 
                 //--------------------------------------------------------------

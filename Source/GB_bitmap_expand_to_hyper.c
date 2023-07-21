@@ -2,14 +2,16 @@
 // GB_bitmap_expand_to_hyper:  expand a compact bitmap C to hypersparse
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
 
+// JIT: not needed.  Only one variant possible.
+
 #define GB_FREE_ALL                 \
 {                                   \
-    GB_phbix_free (C) ;             \
+    GB_phybix_free (C) ;            \
     GB_FREE (&Cp, Cp_size) ;        \
     GB_FREE (&Ch, Ch_size) ;        \
     GB_FREE (&Ci, Ci_size) ;        \
@@ -26,7 +28,7 @@ GrB_Info GB_bitmap_expand_to_hyper
     int64_t cvdim_final,
     GrB_Matrix A,
     GrB_Matrix B,
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -78,7 +80,8 @@ GrB_Info GB_bitmap_expand_to_hyper
     // construct the hyperlist of C, if B is hypersparse
     //----------------------------------------------------------------------
 
-    GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
+    int nthreads_max = GB_Context_nthreads_max ( ) ;
+    double chunk = GB_Context_chunk ( ) ;
     int nthreads = GB_nthreads (cvdim, chunk, nthreads_max) ;
     if (B_is_hyper)
     { 
@@ -172,7 +175,7 @@ GrB_Info GB_bitmap_expand_to_hyper
     C->nzombies = (C_is_bitmap) ? (cnz - C->nvals) : 0 ;
     C->vdim = cvdim_final ;
     C->vlen = cvlen_final ;
-    C->nvals = -1 ;
+    C->nvals = cnz ;
     C->nvec = cvdim ;
     C->plen = cvdim ;
     C->nvec_nonempty = (cvlen == 0) ? 0 : cvdim ;

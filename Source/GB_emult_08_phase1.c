@@ -2,7 +2,7 @@
 // GB_emult_08_phase1: # entries in C=A.*B or C<M or !M>=A.*B (C sparse/hyper)
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ GrB_Info GB_emult_08_phase1                 // count nnz in each C(:,j)
     const bool Mask_comp,           // if true, use !M
     const GrB_Matrix A,
     const GrB_Matrix B,
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -73,7 +73,7 @@ GrB_Info GB_emult_08_phase1                 // count nnz in each C(:,j)
     ASSERT (A->vdim == B->vdim) ;
 
     if (M == NULL)
-    {
+    { 
         ASSERT (GB_IS_SPARSE (A) || GB_IS_HYPERSPARSE (A)) ;
         ASSERT (GB_IS_SPARSE (B) || GB_IS_HYPERSPARSE (B)) ;
     }
@@ -95,7 +95,7 @@ GrB_Info GB_emult_08_phase1                 // count nnz in each C(:,j)
     // count the entries in each vector of C
     //--------------------------------------------------------------------------
 
-    #define GB_PHASE_1_OF_2
+    #define GB_EMULT_08_PHASE 1
     #include "GB_emult_08_meta.c"
 
     //--------------------------------------------------------------------------
@@ -103,7 +103,7 @@ GrB_Info GB_emult_08_phase1                 // count nnz in each C(:,j)
     //--------------------------------------------------------------------------
 
     GB_task_cumsum (Cp, Cnvec, Cnvec_nonempty, TaskList, C_ntasks, C_nthreads,
-        Context) ;
+        Werk) ;
 
     //--------------------------------------------------------------------------
     // return the result

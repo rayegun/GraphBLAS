@@ -2,7 +2,7 @@
 // GB_assign_scalar:    C<M>(Rows,Cols) = accum (C(Rows,Cols),x)
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 
 // This function does the work for GrB_Matrix_assign_TYPE and
 // GrB_Vector_assign_[type], where [type] is one of the 11 types, or the
-// type-generic macro suffix, "_UDT".
+// type-generic "_UDT".
 
 // Compare with GB_subassign_scalar, which uses M and C_replace differently
 
@@ -33,15 +33,17 @@ GrB_Info GB_assign_scalar           // C<M>(Rows,Cols) += x
     const GrB_Index *Cols,          // column indices
     const GrB_Index nCols,          // number of column indices
     const GrB_Descriptor desc,      // descriptor for C and M
-    GB_Context Context
+    GB_Werk Werk
 )
-{ 
+{
 
     //--------------------------------------------------------------------------
     // check inputs
     //--------------------------------------------------------------------------
 
     GB_RETURN_IF_NULL (scalar) ;
+    GB_RETURN_IF_NULL (Rows) ;
+    GB_RETURN_IF_NULL (Cols) ;
     ASSERT (scalar_code <= GB_UDT_code) ;
 
     // get the descriptor
@@ -55,18 +57,27 @@ GrB_Info GB_assign_scalar           // C<M>(Rows,Cols) += x
     // C<M>(Rows,Cols) = accum (C(Rows,Cols), scalar)
     //--------------------------------------------------------------------------
 
-    return (GB_assign (
-        C, C_replace,               // C matrix and its descriptor
-        M, Mask_comp, Mask_struct,  // mask matrix and its descriptor
-        false,                      // do not transpose the mask
-        accum,                      // for accum (C(Rows,Cols),scalar)
-        NULL, false,                // no explicit matrix A
-        Rows, nRows,                // row indices
-        Cols, nCols,                // column indices
-        true,                       // do scalar expansion
-        scalar,                     // scalar to assign, expands to become A
-        scalar_code,                // type code of scalar to expand
-        GB_ASSIGN,
-        Context)) ;
+    if (M == NULL && !Mask_comp && nRows == 1 && nCols == 1 && !C_replace)
+    { 
+        // C(i,j) = scalar or C(i,j) += scalar
+        return (GB_setElement (C, accum, scalar, Rows [0], Cols [0],
+            scalar_code, Werk)) ;
+    }
+    else
+    { 
+        return (GB_assign (
+            C, C_replace,               // C matrix and its descriptor
+            M, Mask_comp, Mask_struct,  // mask matrix and its descriptor
+            false,                      // do not transpose the mask
+            accum,                      // for accum (C(Rows,Cols),scalar)
+            NULL, false,                // no explicit matrix A
+            Rows, nRows,                // row indices
+            Cols, nCols,                // column indices
+            true,                       // do scalar expansion
+            scalar,                     // scalar to assign, expands to become A
+            scalar_code,                // type code of scalar to expand
+            GB_ASSIGN,
+            Werk)) ;
+    }
 }
 

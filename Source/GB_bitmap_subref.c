@@ -2,7 +2,7 @@
 // GB_bitmap_subref: C = A(I,J) where A is bitmap or full
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -10,12 +10,14 @@
 // C=A(I,J), where A is bitmap or full, symbolic and numeric.
 // See GB_subref for details.
 
+// JIT: needed.
+
 #include "GB_subref.h"
 #include "GB_subassign_IxJ_slice.h"
 
 #define GB_FREE_ALL             \
 {                               \
-    GB_phbix_free (C) ;         \
+    GB_phybix_free (C) ;        \
 }
 
 GrB_Info GB_bitmap_subref       // C = A(I,J): either symbolic or numeric
@@ -32,7 +34,7 @@ GrB_Info GB_bitmap_subref       // C = A(I,J): either symbolic or numeric
     const GrB_Index *J,         // index list for C = A(I,J), or GrB_ALL, etc.
     const int64_t nj,           // length of J, or special
     const bool symbolic,        // if true, construct C as symbolic
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -41,7 +43,7 @@ GrB_Info GB_bitmap_subref       // C = A(I,J): either symbolic or numeric
     //--------------------------------------------------------------------------
 
     GrB_Info info ;
-    ASSERT (C != NULL && C->static_header) ;
+    ASSERT (C != NULL && (C->static_header || GBNSTATIC)) ;
     ASSERT_MATRIX_OK (A, "A for C=A(I,J) bitmap subref", GB0) ;
     ASSERT (GB_IS_BITMAP (A) || GB_IS_FULL (A)) ;
     ASSERT (!GB_IS_SPARSE (A)) ;
@@ -73,7 +75,7 @@ GrB_Info GB_bitmap_subref       // C = A(I,J): either symbolic or numeric
     int64_t imin, imax, jmin, jmax ;
 
     info = GB_ijproperties (I, ni, nI, avlen, &Ikind, Icolon,
-        &I_unsorted, &I_has_dupl, &I_contig, &imin, &imax, Context) ;
+        &I_unsorted, &I_has_dupl, &I_contig, &imin, &imax, Werk) ;
     if (info != GrB_SUCCESS)
     { 
         // I invalid
@@ -81,7 +83,7 @@ GrB_Info GB_bitmap_subref       // C = A(I,J): either symbolic or numeric
     }
 
     info = GB_ijproperties (J, nj, nJ, avdim, &Jkind, Jcolon,
-        &J_unsorted, &J_has_dupl, &J_contig, &jmin, &jmax, Context) ;
+        &J_unsorted, &J_has_dupl, &J_contig, &jmin, &jmax, Werk) ;
     if (info != GrB_SUCCESS)
     { 
         // J invalid
@@ -98,9 +100,9 @@ GrB_Info GB_bitmap_subref       // C = A(I,J): either symbolic or numeric
     GrB_Type ctype = symbolic ? GrB_INT64 : A->type ;
     int sparsity = GB_IS_BITMAP (A) ? GxB_BITMAP : GxB_FULL ;
     // set C->iso = C_iso   OK
-    GB_OK (GB_new_bix (&C, true, // bitmap or full, static header
+    GB_OK (GB_new_bix (&C, // bitmap or full, existing header
         ctype, nI, nJ, GB_Ap_null, C_is_csc,
-        sparsity, true, A->hyper_switch, -1, cnzmax, true, C_iso, Context)) ;
+        sparsity, true, A->hyper_switch, -1, cnzmax, true, C_iso)) ;
 
     //--------------------------------------------------------------------------
     // get C

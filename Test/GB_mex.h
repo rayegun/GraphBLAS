@@ -2,13 +2,10 @@
 // GB_mex.h: definitions for the Test interface to GraphBLAS
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
-
-// to turn on memory usage debug printing, uncomment this line:
-// #define GB_PRINT_MALLOC 1
 
 #ifndef GB_MEXH
 #define GB_MEXH
@@ -25,6 +22,7 @@
 #include "GB_mx_usercomplex.h"
 #include "mex.h"
 #include "matrix.h"
+#include "GB_dev.h"
 
 #define SIMPLE_RAND_MAX 32767
 uint64_t simple_rand (void) ;
@@ -43,6 +41,8 @@ uint64_t simple_rand_i (void) ;
 #define MATCH(s,t) (strcmp(s,t) == 0)
 
 void GB_mx_abort (void) ;               // assertion failure
+
+void GB_mx_at_exit ( void ) ;           // for mexAtExit
 
 bool GB_mx_mxArray_to_BinaryOp          // true if successful, false otherwise
 (
@@ -310,12 +310,12 @@ GrB_Scalar GB_mx_get_Scalar
 
 //------------------------------------------------------------------------------
 
-#ifdef GB_PRINT_MALLOC
+#ifdef GB_MEMDUMP
 
 #define METHOD_START(OP) \
     printf ("\n================================================================================\n") ; \
-    printf ("method: [%s] start: "GBd" "GBd"\n", #OP, \
-        GB_Global_nmalloc_get ( ), GB_Global_free_pool_nblocks_total ( )) ; \
+    printf ("method: [%s] start: "GBd" \n", #OP, \
+        GB_Global_nmalloc_get ( )) ; \
     printf ("================================================================================\n") ;
 
 #define METHOD_TRY \
@@ -334,6 +334,10 @@ GrB_Scalar GB_mx_get_Scalar
 
 #endif
 
+#ifndef GB_DUMP_STUFF
+#define GB_DUMP_STUFF ;
+#endif
+
 // test a GraphBLAS operation with malloc debuging
 #define METHOD(GRAPHBLAS_OPERATION)                                         \
     METHOD_START (GRAPHBLAS_OPERATION) ;                                    \
@@ -345,21 +349,20 @@ GrB_Scalar GB_mx_get_Scalar
         if (! (info == GrB_SUCCESS || info == GrB_NO_VALUE))                \
         {                                                                   \
             FREE_ALL ;                                                      \
-            printf ("info: %d\n", info) ;                                   \
-            mexErrMsgTxt ("method failed") ;                                \
+            mexErrMsgIdAndTxt ("GB:test", "method failed, info: %d", info) ;\
         }                                                                   \
     }                                                                       \
     else                                                                    \
     {                                                                       \
         /* brutal malloc debug */                                           \
         int nmalloc_start = (int) GB_Global_nmalloc_get ( ) ;               \
-        int nfree_pool_start = (int) GB_Global_free_pool_nblocks_total ( ) ;\
         for (int tries = 0 ; ; tries++)                                     \
         {                                                                   \
             /* give GraphBLAS the ability to do a # of mallocs, */          \
             /* callocs, and reallocs of larger size, equal to tries */      \
             GB_Global_malloc_debug_count_set (tries) ;                      \
             METHOD_TRY ;                                                    \
+            GB_DUMP_STUFF ;                                                 \
             /* call the method with malloc debug enabled */                 \
             GB_Global_malloc_debug_set (true) ;                             \
             GrB_Info info = GRAPHBLAS_OPERATION ;                           \
@@ -377,24 +380,19 @@ GrB_Scalar GB_mx_get_Scalar
                 /* out of memory; check for leaks */                        \
                 /* output matrix may have changed; recopy for next test */  \
                 /* but turn off malloc debugging to get the copy */         \
+                GB_DUMP_STUFF ;                                             \
                 FREE_DEEP_COPY ;                                            \
                 GET_DEEP_COPY ;                                             \
                 int nmalloc_end = (int) GB_Global_nmalloc_get ( ) ;         \
-                int nfree_pool_end =                                        \
-                    (int) GB_Global_free_pool_nblocks_total ( ) ;           \
                 int nleak = nmalloc_end - nmalloc_start ;                   \
-                int nfree_delta = nfree_pool_end - nfree_pool_start ;       \
-                if (nleak > nfree_delta)                                    \
+                if (nleak > 0)                                              \
                 {                                                           \
                     /* memory leak */                                       \
                     printf ("Leak! tries %d : nleak %d\n"                   \
                         "nmalloc_end:        %d\n"                          \
                         "nmalloc_start:      %d\n"                          \
-                        "nfree_pool start:   %d\n"                          \
-                        "nfree_pool end:     %d\n"                          \
                         "method [%s]\n",                                    \
                         tries, nleak, nmalloc_end, nmalloc_start,           \
-                        nfree_pool_start, nfree_pool_end,                   \
                         GB_STR (GRAPHBLAS_OPERATION)) ;                     \
                     mexWarnMsgIdAndTxt ("GB:leak", "memory leak") ;         \
                     FREE_ALL ;                                              \
@@ -405,8 +403,8 @@ GrB_Scalar GB_mx_get_Scalar
             {                                                               \
                 /* another error has occurred */                            \
                 FREE_ALL ;                                                  \
-                printf ("info: %d\n", info) ; \
-                mexErrMsgTxt ("unexpected error in mex brutal malloc debug") ; \
+                mexErrMsgIdAndTxt ("GB:brutal", "unexpected error in mex "  \
+                    "brutal malloc debug, info: %d", info) ;                \
             }                                                               \
         }                                                                   \
     }
@@ -419,13 +417,13 @@ GrB_Scalar GB_mx_get_Scalar
 // the internal GB_cov array.  The built-in array is created if it doesn't
 // exist.  Thus, to clear the counts simply clear GraphBLAS_grbcov from the
 // built-in global workpace.
-void GB_cover_get (void) ;
+void GB_cover_get (bool cover) ;
 
 // GB_cover_put copies the internal GB_cov array back into the GraphBLAS_grbcov
 // array, for analysis and for subsequent statement counting.  This way,
 // multiple tests in built-in can be accumulated into a single array of
 // counters.
-void GB_cover_put (void) ;
+void GB_cover_put (bool cover) ;
 
 #endif
 

@@ -2,7 +2,7 @@
 // GB_Descriptor_get: get the status of a descriptor
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -69,14 +69,8 @@
 
 //  desc->do_sort               true or false (default is false) 
 
-//  desc->nthreads_max          max # number of threads to use (auto if <= 0)
-//  desc->chunk                 chunk size for threadds
-
-//      These are copied from the GrB_Descriptor into the Context.
-
 #include "GB.h"
 
-GB_PUBLIC
 GrB_Info GB_Descriptor_get      // get the contents of a descriptor
 (
     const GrB_Descriptor desc,  // descriptor to query, may be NULL
@@ -86,8 +80,7 @@ GrB_Info GB_Descriptor_get      // get the contents of a descriptor
     bool *In0_transpose,        // if true transpose first input
     bool *In1_transpose,        // if true transpose second input
     GrB_Desc_Value *AxB_method, // method for C=A*B
-    int *do_sort,               // if nonzero, sort in GrB_mxm
-    GB_Context Context
+    int *do_sort                // if nonzero, sort in GrB_mxm
 )
 {
 
@@ -97,7 +90,6 @@ GrB_Info GB_Descriptor_get      // get the contents of a descriptor
 
     // desc may be null, but if not NULL it must be initialized
     GB_RETURN_IF_FAULTY (desc) ;
-    ASSERT (Context != NULL) ;  // Context is always present
 
     //--------------------------------------------------------------------------
     // get the contents of the descriptor
@@ -109,8 +101,7 @@ GrB_Info GB_Descriptor_get      // get the contents of a descriptor
     GrB_Desc_Value In0_desc  = GxB_DEFAULT ;
     GrB_Desc_Value In1_desc  = GxB_DEFAULT ;
     GrB_Desc_Value AxB_desc  = GxB_DEFAULT ;
-    int nthreads_desc        = GxB_DEFAULT ;
-    double chunk_desc        = GxB_DEFAULT ;
+
     int do_sort_desc         = GxB_DEFAULT ;
 
     // non-defaults descriptor values
@@ -123,13 +114,6 @@ GrB_Info GB_Descriptor_get      // get the contents of a descriptor
         In1_desc  = desc->in1 ;   // DEFAULT or TRAN
         AxB_desc  = desc->axb ;   // DEFAULT, GUSTAVSON, HASH, or DOT
         do_sort_desc = desc->do_sort ;  // DEFAULT, or true (nonzero)
-
-        // default is zero.  if descriptor->nthreads_max <= 0, GraphBLAS selects
-        // automatically: any value between 1 and the global nthreads_max.  If
-        // descriptor->nthreads_max > 0, then that defines the exact number of
-        // threads to use in the current GraphBLAS operation.
-        nthreads_desc = desc->nthreads_max ;
-        chunk_desc = desc->chunk ;
     }
 
     // check for valid values of each descriptor field
@@ -175,11 +159,6 @@ GrB_Info GB_Descriptor_get      // get the contents of a descriptor
     { 
         *do_sort = do_sort_desc ;
     }
-
-    // The number of threads is copied from the descriptor into the Context, so
-    // it is available to any internal function that needs it.
-    Context->nthreads_max = nthreads_desc ;
-    Context->chunk = chunk_desc ;
 
     return (GrB_SUCCESS) ;
 }

@@ -2,8 +2,8 @@
 // gb_usage: check usage and make sure GrB.init has been called
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
 
@@ -26,43 +26,27 @@ void gb_usage       // check usage and make sure GrB.init has been called
     // make sure GrB.init has been called
     //--------------------------------------------------------------------------
 
-    if (!GB_Global_GrB_init_called_get ( )) // TODO::: add this as GxB_get
+    if (!GB_Global_GrB_init_called_get ( ))
     {
 
         //----------------------------------------------------------------------
-        // initialize GraphBLAS
+        // tell MATLAB to call GrB_finalize when this mexFunction is cleared
         //----------------------------------------------------------------------
 
-        OK (GxB_init (GrB_NONBLOCKING, mxMalloc, mxCalloc, mxRealloc, mxFree
-            #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-            , false // unused in v5.2.0, removed in v6.0
-            #endif
-            )) ;
+        mexAtExit (gb_at_exit) ;
 
-        // mxMalloc, mxCalloc, mxRealloc, and mxFree are not thread safe
-        GB_Global_malloc_is_thread_safe_set (false) ;
+        //----------------------------------------------------------------------
+        // tell GraphBLAS how to tell MATLAB to make memory persistent
+        //----------------------------------------------------------------------
 
-        // must use mexPrintf to print to Command Window
-        OK (GxB_Global_Option_set (GxB_PRINTF, mexPrintf)) ;
-        OK (GxB_Global_Option_set (GxB_FLUSH, gb_flush)) ;
+        GB_Global_persistent_set (mexMakeMemoryPersistent) ;
 
-        // disable the memory pool
-        int64_t free_pool_limit [64] =
-            {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-             0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } ;
-        OK (GxB_Global_Option_set (GxB_MEMORY_POOL, free_pool_limit)) ;
+        //----------------------------------------------------------------------
+        // initialize GraphBLAS and set defaults for its use in MATLAB
+        //----------------------------------------------------------------------
 
-        // built-in matrices are stored by column
-        OK (GxB_Global_Option_set (GxB_FORMAT, GxB_BY_COL)) ;
-
-        // print 1-based indices
-        OK (GxB_Global_Option_set (GxB_PRINT_1BASED, true)) ;
-
-        // for debug only
-        GB_Global_abort_function_set (gb_abort) ;   // TODO:: add as GxB_set/get
-
-        // for printing memory sizes of matrices
-        GB_Global_print_mem_shallow_set (true) ;
+        OK (GxB_init (GrB_NONBLOCKING, mxMalloc, mxCalloc, mxRealloc, mxFree)) ;
+        gb_defaults ( ) ;
     }
 
     //--------------------------------------------------------------------------

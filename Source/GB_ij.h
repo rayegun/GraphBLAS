@@ -2,7 +2,7 @@
 // GB_ij.h: definitions for I and J index lists
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -12,7 +12,6 @@
 
 #include "GB.h"
 
-GB_PUBLIC
 void GB_ijlength            // get the length and kind of an index list I
 (
     const GrB_Index *I,     // list of indices (actual or implicit)
@@ -40,7 +39,7 @@ GrB_Info GB_ijproperties        // check I and determine its properties
     bool *I_is_contig,          // true if I is a contiguous list, imin:imax
     int64_t *imin_result,       // min (I)
     int64_t *imax_result,       // max (I)
-    GB_Context Context
+    GB_Werk Werk
 ) ;
 
 GrB_Info GB_ijsort
@@ -51,8 +50,7 @@ GrB_Info GB_ijsort
                         // contains the sorted indices with duplicates removed.
     size_t *I2_size_handle,
     GrB_Index *restrict *p_I2k,  // output array of size ni2
-    size_t *I2k_size_handle,
-    GB_Context Context
+    size_t *I2k_size_handle
 ) ;
 
 // given k, return the kth item i = I [k] in the list

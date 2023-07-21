@@ -2,17 +2,18 @@
 // GB_convert_full_to_sparse: convert a matrix from full to sparse
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
+
+// JIT: not needed.  Only one variant possible.
 
 #include "GB.h"
 
 GrB_Info GB_convert_full_to_sparse      // convert matrix from full to sparse
 (
-    GrB_Matrix A,               // matrix to convert from full to sparse
-    GB_Context Context
+    GrB_Matrix A                // matrix to convert from full to sparse
 )
 {
 
@@ -28,7 +29,6 @@ GrB_Info GB_convert_full_to_sparse      // convert matrix from full to sparse
     ASSERT (!GB_ZOMBIES (A)) ;
     ASSERT (!GB_JUMBLED (A)) ;
     ASSERT (!GB_PENDING (A)) ;
-    GBURBLE ("(full to sparse) ") ;
 
     //--------------------------------------------------------------------------
     // allocate A->p and A->i
@@ -37,6 +37,7 @@ GrB_Info GB_convert_full_to_sparse      // convert matrix from full to sparse
     int64_t avdim = A->vdim ;
     int64_t avlen = A->vlen ;
     int64_t anz = GB_nnz_full (A) ;
+    GB_BURBLE_N (anz, "(full to sparse) ") ;
     int64_t *restrict Ap = NULL ; size_t Ap_size = 0 ;
     int64_t *restrict Ai = NULL ; size_t Ai_size = 0 ;
     Ap = GB_MALLOC (avdim+1, int64_t, &Ap_size) ;
@@ -54,12 +55,14 @@ GrB_Info GB_convert_full_to_sparse      // convert matrix from full to sparse
     A->plen = avdim ;
     A->nvec = avdim ;
     A->nvec_nonempty = (avlen == 0) ? 0 : avdim ;
+    A->nvals = anz ;
 
     //--------------------------------------------------------------------------
     // determine the number of threads to use
     //--------------------------------------------------------------------------
 
-    GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
+    int nthreads_max = GB_Context_nthreads_max ( ) ;
+    double chunk = GB_Context_chunk ( ) ;
     int nthreads = GB_nthreads (anz, chunk, nthreads_max) ;
 
     //--------------------------------------------------------------------------

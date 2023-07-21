@@ -2,13 +2,14 @@
 // GB_AxB_saxpy: compute C=A*B, C<M>=A*B, or C<!M>=A*B
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
 
 #include "GB_mxm.h"
-#include "GB_bitmap_AxB_saxpy.h"
+#include "GB_AxB_saxpy.h"
+#include "GB_stringify.h"
 
 // TODO: allow bitmap multiply to work in-place as well
 
@@ -28,10 +29,9 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
     bool *done_in_place,            // if true, C was computed in-place 
     const GrB_Desc_Value AxB_method,
     const int do_sort,              // if nonzero, try to sort in saxpy3
-    GB_Context Context
+    GB_Werk Werk
 )
 {
-// double tt1 = omp_get_wtime ( ) ;
 
     //--------------------------------------------------------------------------
     // check inputs
@@ -39,7 +39,7 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
 
     GrB_Info info ;
     (*mask_applied) = false ;
-    ASSERT (C != NULL && C->static_header) ;
+    ASSERT (C != NULL && (C->static_header || GBNSTATIC)) ;
 
     ASSERT_MATRIX_OK_OR_NULL (M, "M for saxpy A*B", GB0) ;
     ASSERT (!GB_PENDING (M)) ;
@@ -65,7 +65,7 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
 
     int C_sparsity, saxpy_method ;
     GB_AxB_saxpy_sparsity (&C_sparsity, &saxpy_method,
-        M, Mask_comp, A, B, Context) ;
+        M, Mask_comp, A, B) ;
 
     //--------------------------------------------------------------------------
     // determine if C is iso
@@ -74,10 +74,10 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
     GrB_Type ztype = semiring->add->op->ztype ;
     size_t zsize = ztype->size ;
     GB_void cscalar [GB_VLA(zsize)] ;
-    bool C_iso = GB_iso_AxB (cscalar, A, B, A->vdim, semiring, flipxy, false) ;
+    bool C_iso = GB_AxB_iso (cscalar, A, B, A->vdim, semiring, flipxy, false) ;
     if (C_iso)
     {
-        // revise the method if A and B are both iso and full
+        // revise the method if A and B are both iso and as-if-full
         if (A->iso && GB_as_if_full (A) && B->iso && GB_as_if_full (B))
         { 
             saxpy_method = GB_SAXPY_METHOD_ISO_FULL ;
@@ -86,30 +86,58 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
     }
 
     //--------------------------------------------------------------------------
-    // determine if saxpy4 can be used: C += A*B where C is full
+    // determine if saxpy4 or saxpy5 can be used: C += A*B where C is full
     //--------------------------------------------------------------------------
 
-    if (!C_iso && C_in != NULL && GB_as_if_full (C_in) && M == NULL
-        && (accum != NULL)
-        && (accum == semiring->add->op) && (C_in->type == accum->ztype)
-        && (GB_IS_SPARSE (A) || GB_IS_HYPERSPARSE (A))
-        && (GB_IS_BITMAP (B) || GB_as_if_full (B)))
-    { 
-        // GB_AxB_saxpy4 computes C += A*B where C is as-is-full, no mask is
-        // present, accum is present and matches the monoid, no typecasting, A
-        // is sparse or hypersparse, and B is bitmap or as-if-full.  Only
-        // built-in semirings are supported, but not all: (1) the ANY monoid is
-        // not supported since it would be unusual to use ANY as the accum, and
-        // (2) only monoids that can be done atomically without a critical
-        // section are supported.  The method is not used if A*B is iso;
-        // C may be iso on input but it is non-iso on output.
-        info = GB_AxB_saxpy4 (C_in, A, B, semiring, flipxy, done_in_place,
-            Context) ;
-        if (info != GrB_NO_VALUE)
+    if (!C_iso                              // C must be non-iso on output
+        && C_in != NULL                     // GB_AxB_meta says it is OK
+        && GB_IS_FULL (C_in)                // C must be full
+        && M == NULL                        // no mask present
+        && (accum != NULL)                  // accum is present
+        && (accum == semiring->add->op)     // accum is same as monoid
+        && (C_in->type == accum->ztype))    // no typecast from accum output
+    {
+        if ((GB_IS_SPARSE (A) || GB_IS_HYPERSPARSE (A))
+        &&  (GB_IS_BITMAP (B) || GB_IS_FULL (B)))
         { 
-            // return if saxpy4 has handled this case, otherwise fall through
-            // to saxpy3, dot2, or bitmap_saxpy below.
-            return (info) ;
+            // GB_AxB_saxpy4 computes C += A*B where C is full, no mask
+            // is present, accum is present and matches the monoid, no
+            // typecasting, A is sparse or hypersparse, and B is bitmap or
+            // full.  The ANY monoid is not supported since it would be
+            // unusual to use ANY as the accum.  C may be iso on input but the
+            // method is not used if C is iso on output.  The type of C must
+            // match the ztype of the monoid, but the JIT may do any
+            // typecasting with A and B.
+
+            info = GB_AxB_saxpy4 (C_in, A, B, semiring, flipxy, done_in_place,
+                Werk) ;
+            if (info != GrB_NO_VALUE)
+            { 
+                // return if saxpy4 has handled this case, otherwise fall
+                // through to saxpy3, dot2, or bitmap_saxpy below.
+                return (info) ;
+            }
+        }
+        else if ((GB_IS_BITMAP (A) || GB_IS_FULL (A))
+             &&  (GB_IS_SPARSE (B) || GB_IS_HYPERSPARSE (B))
+             && A->type == (flipxy ? semiring->multiply->ytype :
+                                     semiring->multiply->xtype))
+        {
+            // GB_AxB_saxpy5 computes C+=A*B where C is full, just like
+            // GB_AxB_saxpy4, except that the sparsity format of A and B are
+            // reversed.  A is bitmap or full, and B is sparse or hypersparse.
+            // A->type must match the multiply input type (xtype if flipxy
+            // false, ytype if true).  The type of C must match the ztype of
+            // the monoid.  The JIT may do any typecasting with B.
+
+            info = GB_AxB_saxpy5 (C_in, A, B, semiring, flipxy, done_in_place,
+                Werk) ;
+            if (info != GrB_NO_VALUE)
+            { 
+                // return if saxpy5 has handled this case, otherwise fall
+                // through to saxpy3, dot2, or bitmap_saxpy below.
+                return (info) ;
+            }
         }
     }
 
@@ -119,10 +147,11 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
 
     if (M == NULL)
     { 
-        GBURBLE ("(%s = %s*%s) ",
+        GBURBLE ("(%s = %s*%s, anz: %g bnz: %g) ",
             GB_sparsity_char (C_sparsity),
             GB_sparsity_char_matrix (A),
-            GB_sparsity_char_matrix (B)) ;
+            GB_sparsity_char_matrix (B),
+            (double) GB_nnz (A), (double) GB_nnz (B)) ;
     }
     else
     { 
@@ -150,9 +179,9 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
         GBURBLE ("(iso full saxpy) ") ;
         ASSERT (C_sparsity == GxB_FULL) ;
         // set C->iso = true    OK
-        info = GB_new_bix (&C, true,    // static header
+        info = GB_new_bix (&C, // existing header
             ztype, A->vlen, B->vdim, GB_Ap_null, true, GxB_FULL, false,
-            GB_HYPER_SWITCH_DEFAULT, -1, 1, true, true, Context) ;
+            GB_HYPER_SWITCH_DEFAULT, -1, 1, true, true) ;
         if (info == GrB_SUCCESS)
         { 
             C->magic = GB_MAGIC ;
@@ -178,7 +207,7 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
         ASSERT (C_sparsity == GxB_HYPERSPARSE || C_sparsity == GxB_SPARSE) ;
         info = GB_AxB_saxpy3 (C, C_iso, cscalar, C_sparsity, M, Mask_comp,
             Mask_struct, A, B, semiring, flipxy, mask_applied, AxB_method,
-            do_sort, Context) ;
+            do_sort, Werk) ;
 
         if (info == GrB_NO_VALUE)
         { 
@@ -188,16 +217,16 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
             // GB_AxB_saxpy_sparsity will be called again, and it might choose
             // the bitmap method instead.  If saxpy3 is still chosen, this
             // results in a different analysis in GB_AxB_saxpy3, with no mask
-            // present.  Otherwise, GB_bitmap_AxB_saxpy, below, is called.
+            // present.  Otherwise, GB_AxB_saxbit, below, is called.
             ASSERT (M != NULL) ;
             info = GB_AxB_saxpy (C, NULL, NULL, false, false, NULL, A, B,
                 semiring, flipxy, mask_applied, done_in_place, AxB_method,
-                do_sort, Context) ;
+                do_sort, Werk) ;
         }
 
     }
     else
-    { 
+    {
 
         //----------------------------------------------------------------------
         // bitmap method: C is bitmap
@@ -212,20 +241,20 @@ GrB_Info GB_AxB_saxpy               // C = A*B using Gustavson/Hash/Bitmap
             // sparse or hypersparse, using the dot2 method with A not
             // explicitly transposed.
             info = GB_AxB_dot2 (C, C_iso, cscalar, M, Mask_comp, Mask_struct,
-                true, A, B, semiring, flipxy, Context) ;
+                true, A, B, semiring, flipxy, Werk) ;
         }
         else
         { 
+
             // C<#M> = A*B via bitmap saxpy method
-            info = GB_bitmap_AxB_saxpy (C, C_iso, cscalar, M,
-                Mask_comp, Mask_struct, A, B, semiring, flipxy, Context) ;
+            info = GB_AxB_saxbit (C, C_iso, cscalar, M,
+                Mask_comp, Mask_struct, A, B, semiring, flipxy, Werk) ;
         }
 
         // the mask is always applied if present
         (*mask_applied) = (M != NULL && info == GrB_SUCCESS) ;
     }
 
-// tt1 = omp_get_wtime ( ) - tt1 ; printf ("saxpy time: %g\n", tt1) ;
     return (info) ;
 }
 

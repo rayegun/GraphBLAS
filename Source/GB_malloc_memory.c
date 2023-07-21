@@ -2,7 +2,7 @@
 // GB_malloc_memory: wrapper for malloc
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -21,35 +21,17 @@ static inline void *GB_malloc_helper
     size_t *size            // on input: # of bytes requested
                             // on output: # of bytes actually allocated
 )
-{
+{ 
     void *p = NULL ;
 
-    // determine the next higher power of 2
+    // make sure the block is at least 8 bytes in size
     (*size) = GB_IMAX (*size, 8) ;
-    int k = GB_CEIL_LOG2 (*size) ;
 
-    // if available, get the block from the pool
-    if (GB_Global_free_pool_limit_get (k) > 0)
-    {
-        // round up the size to the nearest power of two
-        (*size) = ((size_t) 1) << k ;
-        p = GB_Global_free_pool_get (k) ;
-        #ifdef GB_MEMDUMP
-        if (p != NULL) printf ("malloc from pool: %p %ld\n", p, *size) ;
-        #endif
-    }
+    p = GB_Global_malloc_function (*size) ;
 
-    if (p == NULL)
-    {
-        // no block in the free_pool, so allocate it
-        p = GB_Global_malloc_function (*size) ;
-
-        #ifdef GB_MEMDUMP
-        printf ("hard malloc %p %ld\n", p, *size) ;
-        #endif
-    }
     #ifdef GB_MEMDUMP
-    GB_Global_free_pool_dump (2) ; GB_Global_memtable_dump ( ) ;
+    printf ("hard malloc %p %ld\n", p, *size) ; // MEMDUMP
+    GB_Global_memtable_dump ( ) ;
     #endif
 
     return (p) ;
@@ -59,14 +41,7 @@ static inline void *GB_malloc_helper
 // GB_malloc_memory
 //------------------------------------------------------------------------------
 
-GB_PUBLIC
-void *GB_malloc_memory      // pointer to allocated block of memory
-(
-    size_t nitems,          // number of items to allocate
-    size_t size_of_item,    // sizeof each item
-    // output
-    size_t *size_allocated  // # of bytes actually allocated
-)
+GB_CALLBACK_MALLOC_MEMORY_PROTO (GB_malloc_memory)
 {
 
     //--------------------------------------------------------------------------
@@ -85,7 +60,8 @@ void *GB_malloc_memory      // pointer to allocated block of memory
     size_of_item = GB_IMAX (1, size_of_item) ;
 
     bool ok = GB_size_t_multiply (&size, nitems, size_of_item) ;
-    if (!ok || nitems > GB_NMAX || size_of_item > GB_NMAX)
+    if (!ok || (((uint64_t) nitems) > GB_NMAX)
+            || (((uint64_t) size_of_item) > GB_NMAX))
     { 
         // overflow
         (*size_allocated) = 0 ;

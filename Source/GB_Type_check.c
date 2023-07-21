@@ -2,7 +2,7 @@
 // GB_Type_check: check and print a built-in or user-defined type
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -14,7 +14,6 @@
 
 #include "GB.h"
 
-GB_PUBLIC
 GrB_Info GB_Type_check      // check a GraphBLAS Type
 (
     const GrB_Type type,    // GraphBLAS type to print and check
@@ -69,6 +68,19 @@ GrB_Info GB_Type_check      // check a GraphBLAS Type
     { 
         GBPR0 ("    Type has an invalid size\n") ;
         return (GrB_INVALID_OBJECT) ;
+    }
+
+    int32_t name_len = type->name_len ;
+    int32_t actual_len = (int32_t) strlen (type->name) ;
+    if (type->code == GB_UDT_code && name_len != actual_len)
+    { 
+        GBPR0 ("    Type has an invalid name_len\n") ;
+        return (GrB_INVALID_OBJECT) ;
+    }
+
+    if (type->defn != NULL)
+    { 
+        GBPR0 ("    %s\n", type->defn) ;
     }
 
     return (GrB_SUCCESS) ;

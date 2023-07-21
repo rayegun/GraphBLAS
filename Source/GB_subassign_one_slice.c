@@ -2,7 +2,7 @@
 // GB_subassign_one_slice: slice the entries and vectors for subassign
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -26,6 +26,7 @@
 // C: not bitmap
 
 #include "GB_subassign_methods.h"
+#include "GB_assign_shared_definitions.h"
 
 #undef  GB_FREE_WORKSPACE
 #define GB_FREE_WORKSPACE           \
@@ -62,7 +63,7 @@ GrB_Info GB_subassign_one_slice
     const int Jkind,
     const int64_t Jcolon [3],
     const GrB_Matrix M,             // matrix to slice
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -70,6 +71,7 @@ GrB_Info GB_subassign_one_slice
     // check inputs
     //--------------------------------------------------------------------------
 
+    GrB_Info info ;
     ASSERT (p_TaskList != NULL) ;
     ASSERT (p_ntasks != NULL) ;
     ASSERT (p_nthreads != NULL) ;
@@ -89,7 +91,8 @@ GrB_Info GB_subassign_one_slice
     // determine # of threads to use
     //--------------------------------------------------------------------------
 
-    GB_GET_NTHREADS_MAX (nthreads_max, chunk, Context) ;
+    int nthreads_max = GB_Context_nthreads_max ( ) ;
+    double chunk = GB_Context_chunk ( ) ;
 
     //--------------------------------------------------------------------------
     // get M and C
@@ -123,6 +126,8 @@ GrB_Info GB_subassign_one_slice
     int ntasks = 0 ;
     int ntasks0 = (nthreads == 1) ? 1 : (32 * nthreads) ;
     GB_REALLOC_TASK_WORK (TaskList, ntasks0, max_ntasks) ;
+
+    GB_GET_C_HYPER_HASH ;
 
     //--------------------------------------------------------------------------
     // check for quick return for a single task
@@ -236,7 +241,7 @@ GrB_Info GB_subassign_one_slice
             ASSERT (k >= 0 && k < mnvec) ;
             int64_t j = GBH (Mh, k) ;
             ASSERT (j >= 0 && j < nJ) ;
-            int64_t GB_LOOKUP_jC ;
+            GB_LOOKUP_VECTOR_jC (false, 0) ;
 
             bool jC_dense = (pC_end - pC_start == Cvlen) ;
 

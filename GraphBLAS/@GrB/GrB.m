@@ -196,6 +196,7 @@ classdef GrB
 %   C = coth (G)            hyperbolic cotangent
 %   C = csc (G)             cosecant
 %   C = csch (G)            hyperbolic cosecant
+%   C = cbrt (G)            cube root
 %
 %   C = diag (A, k)         diagonal matrices and diagonals
 %   DiGraph = digraph (G,...)   directed Graph
@@ -338,6 +339,7 @@ classdef GrB
 %   t = GrB.threads (t)          set/get # of threads to use in GraphBLAS
 %   c = GrB.chunk (c)            set/get chunk size to use in GraphBLAS
 %   b = GrB.burble (b)           set/get burble (diagnostic output)
+%   [s,path] = GrB.jit (s,path)  control the GraphBLAS JIT
 %
 %   info:
 %   GrB.binopinfo (op, type)     list properties of a binary operator
@@ -567,8 +569,8 @@ classdef GrB
 %
 % See also sparse.
 %
-% SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
-% SPDX-License-Identifier: GPL-3.0-or-later
+% SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
+% SPDX-License-Identifier: Apache-2.0
 
 properties (SetAccess = private, GetAccess = private)
     % The struct contains the entire opaque content of a GraphBLAS
@@ -743,7 +745,7 @@ methods
     %       condensation inedges isdag predecessors successors toposort
     %       transclosure transreduction
 
-    % methods in LAGraph: (see the LAGraph/Source folder)
+    % methods in LAGraph: (see the LAGraph/src folder)
 
     %---------------------------------------------------------------------
     % operator overloading
@@ -834,6 +836,7 @@ methods
     C = coth (G) ;
     C = csc (G) ;
     C = csch (G) ;
+    C = cbrt (G) ;
 
     C = diag (A, k) ;
     DiGraph = digraph (G, option) ;
@@ -917,7 +920,7 @@ methods
 
     C = real (G) ;
     C = repmat (G, m, n) ;
-    C = reshape (G, arg1, arg2) ;
+    C = reshape (G, m, n, by_col) ;
     C = round (G) ;
 
     C = sec (G) ;
@@ -1031,6 +1034,7 @@ methods (Static)
     C = speye (m, n, type) ;
     C = subassign (Cin, M, accum, A, I, J, desc) ;
     nthreads = threads (nthreads) ;
+    [s,path] = jit (s,path) ;
     C = trans (Cin, M, accum, A, desc) ;
     s = tricount (A, check, d) ;                % uses GrB matrices
     s = type (A) ;
@@ -1038,6 +1042,8 @@ methods (Static)
     v = version ;
     v = ver ;
     C = vreduce (Cin, M, accum, monoid, A, desc) ;
+
+    t = timing (c) ; % timing for diagnositics only, requires -DGB_TIMING
 
     % these were formerly overloaded methods, now Static methods
     C = false (varargin) ;

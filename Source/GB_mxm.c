@@ -2,7 +2,7 @@
 // GB_mxm: matrix-matrix multiply for GrB_mxm, GrB_mxv, and GrB_vxm
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -12,14 +12,14 @@
 // This function is not user-callable.  It does the work for user-callable
 // functions GrB_mxm, GrB_mxv, and GrB_vxm.
 
-#include "GB_mxm.h"
-#include "GB_accum_mask.h"
-
 #define GB_FREE_ALL         \
 {                           \
-    GB_phbix_free (MT) ;    \
-    GB_phbix_free (T) ;     \
+    GB_Matrix_free (&MT) ;  \
+    GB_Matrix_free (&T) ;   \
 }
+
+#include "GB_mxm.h"
+#include "GB_accum_mask.h"
 
 GrB_Info GB_mxm                     // C<M> = A*B
 (
@@ -37,7 +37,7 @@ GrB_Info GB_mxm                     // C<M> = A*B
     const bool flipxy,              // if true, do z=fmult(b,a) vs fmult(a,b)
     const GrB_Desc_Value AxB_method,// for auto vs user selection of methods
     const int do_sort,              // if nonzero, try to return C unjumbled
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -49,10 +49,8 @@ GrB_Info GB_mxm                     // C<M> = A*B
 
     GrB_Info info ;
 
-    // RMM note: header of MT and T on the stack
     struct GB_Matrix_opaque MT_header, T_header ;
-    GrB_Matrix MT = GB_clear_static_header (&MT_header) ;
-    GrB_Matrix T  = GB_clear_static_header (&T_header) ;
+    GrB_Matrix MT = NULL, T = NULL ;
 
     GB_RETURN_IF_FAULTY_OR_POSITIONAL (accum) ;
     GB_RETURN_IF_NULL_OR_FAULTY (semiring) ;
@@ -67,20 +65,20 @@ GrB_Info GB_mxm                     // C<M> = A*B
     // check domains and dimensions for C<M> = accum (C,T)
     GrB_Type T_type = semiring->add->op->ztype ;
     GB_OK (GB_compatible (C->type, C, M_input, Mask_struct, accum, T_type,
-        Context)) ;
+        Werk)) ;
 
     // T=A*B via semiring: A and B must be compatible with semiring->multiply
     if (flipxy)
     { 
         // z=fmult(b,a), for entries a from A, and b from B
         GB_OK (GB_BinaryOp_compatible (semiring->multiply,
-                NULL, B->type, A->type, GB_ignore_code, Context)) ;
+                NULL, B->type, A->type, GB_ignore_code, Werk)) ;
     }
     else
     { 
         // z=fmult(a,b), for entries a from A, and b from B
         GB_OK (GB_BinaryOp_compatible (semiring->multiply,
-                NULL, A->type, B->type, GB_ignore_code, Context)) ;
+                NULL, A->type, B->type, GB_ignore_code, Werk)) ;
     }
 
     // check the dimensions
@@ -106,11 +104,12 @@ GrB_Info GB_mxm                     // C<M> = A*B
 
     GrB_Matrix M = M_input ;
     GB_MATRIX_WAIT_IF_PENDING_OR_ZOMBIES (M) ;
-    if (Mask_struct && GB_is_dense (M))
+    if (Mask_struct && GB_as_if_full (M))
     { 
         // ignore the mask if all entries present and not complemented
         M = NULL ;
     }
+
     // quick return if a NULL mask is complemented
     GB_RETURN_IF_QUICK_MASK (C, C_replace, M, Mask_comp, Mask_struct) ;
     GB_MATRIX_WAIT_IF_PENDING_OR_ZOMBIES (A) ;
@@ -136,7 +135,8 @@ GrB_Info GB_mxm                     // C<M> = A*B
     // semiring->add->ztype if accum is not present.  To compute in-place,
     // C must also not be transposed, and it cannot be aliased with M, A, or B.
 
-// for (int k = 0 ; k < 40 ; k++) GB_Global_timing_clear (k) ;
+    GB_CLEAR_STATIC_HEADER (MT, &MT_header) ;
+    GB_CLEAR_STATIC_HEADER (T, &T_header) ;
 
     bool mask_applied = false ;
     bool done_in_place = false ;
@@ -144,19 +144,13 @@ GrB_Info GB_mxm                     // C<M> = A*B
     GB_OK (GB_AxB_meta (T, C, C_replace, C->is_csc, MT, &M_transposed, M,
         Mask_comp, Mask_struct, accum, A, B, semiring, A_transpose,
         B_transpose, flipxy, &mask_applied, &done_in_place, AxB_method,
-        do_sort, Context)) ;
-
-// for (int k = 0 ; k < 40 ; k++)
-// {
-//      double t = GB_Global_timing_get (k) ;
-//      if (t > 0) printf ("%2d: %g\n", k, t) ;
-// }
+        do_sort, Werk)) ;
 
     if (done_in_place)
     { 
         // C has been computed in-place; no more work to do
-        GB_phbix_free (MT) ;
-        GB_OK (GB_conform (C, Context)) ;
+        GB_FREE_ALL ;
+        GB_OK (GB_conform (C, Werk)) ;
         ASSERT_MATRIX_OK (C, "C from GB_mxm (in-place)", GB0) ;
         return (info) ;
     }
@@ -182,7 +176,7 @@ GrB_Info GB_mxm                     // C<M> = A*B
         // needed.  If no typecasting is done then this takes no time at all
         // and is a pure transplant.  Also conform C to its desired
         // hypersparsity.
-        GB_phbix_free (MT) ;
+        GB_Matrix_free (&MT) ;
         if (GB_ZOMBIES (T) && T->type != C->type)
         { 
             // T = A*B can be constructed with zombies, using the dot3 method.
@@ -194,23 +188,24 @@ GrB_Info GB_mxm                     // C<M> = A*B
             // are ignored.  But valgrind complains about it, so they are
             // killed now.  Also see the discussion in GB_transplant.
             GBURBLE ("(wait, so zombies are not typecasted) ") ;
-            GB_OK (GB_wait (T, "T", Context)) ;
+            GB_OK (GB_wait (T, "T", Werk)) ;
         }
-        GB_OK (GB_transplant_conform (C, C->type, &T, Context)) ;
+        GB_OK (GB_transplant_conform (C, C->type, &T, Werk)) ;
         // C may be returned with zombies and jumbled, but no pending tuples
         ASSERT_MATRIX_OK (C, "C from GB_mxm (transplanted)", GB0) ;
         ASSERT (GB_ZOMBIES_OK (C)) ;
         ASSERT (GB_JUMBLED_OK (C)) ;
         ASSERT (!GB_PENDING (C)) ;
-        return (GB_block (C, Context)) ;
+        info = GB_block (C, Werk) ;
+
     }
     else
     { 
         // C<M> = accum (C,T)
         // GB_accum_mask also conforms C to its desired hypersparsity.
         info = GB_accum_mask (C, M, (M_transposed) ? MT : NULL, accum, &T,
-            C_replace, Mask_comp, Mask_struct, Context) ;
-        GB_phbix_free (MT) ;
+            C_replace, Mask_comp, Mask_struct, Werk) ;
+        GB_Matrix_free (&MT) ;
         #ifdef GB_DEBUG
         if (info == GrB_SUCCESS)
         {
@@ -221,7 +216,8 @@ GrB_Info GB_mxm                     // C<M> = A*B
             ASSERT (GB_PENDING_OK (C)) ;
         }
         #endif
-        return (info) ;
     }
+
+    return (info) ;
 }
 

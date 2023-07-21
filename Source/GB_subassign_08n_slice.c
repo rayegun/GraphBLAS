@@ -2,7 +2,7 @@
 // GB_subassign_08n_slice: slice the entries and vectors for GB_subassign_08n
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -28,6 +28,7 @@
 // does not need to consider the bitmap case for C, M, or A.
 
 #include "GB_subassign_methods.h"
+#include "GB_assign_shared_definitions.h"
 #include "GB_emult.h"
 // Npending is set to NULL by the GB_EMPTY_TASKLIST macro, but unused here.
 #include "GB_unused.h"
@@ -57,7 +58,7 @@ GrB_Info GB_subassign_08n_slice
     const int64_t Jcolon [3],
     const GrB_Matrix A,             // matrix to slice
     const GrB_Matrix M,             // matrix to slice
-    GB_Context Context
+    GB_Werk Werk
 )
 {
 
@@ -107,6 +108,7 @@ GrB_Info GB_subassign_08n_slice
     const int64_t *restrict Ch = C->h ;
     const int64_t *restrict Cp = C->p ;
     const bool C_is_hyper = (Ch != NULL) ;
+    GB_GET_C_HYPER_HASH ;
 
     const int64_t *restrict Mp = M->p ;
     const int64_t *restrict Mh = M->h ;
@@ -130,7 +132,7 @@ GrB_Info GB_subassign_08n_slice
     int Z_sparsity = GxB_SPARSE ;
     GB_OK (GB_emult_08_phase0 (&Znvec, &Zh_shallow, &Zh_size, NULL, NULL,
         &Z_to_A, &Z_to_A_size, &Z_to_M, &Z_to_M_size, &Z_sparsity, NULL, A, M,
-        Context)) ;
+        Werk)) ;
 
     // Z is still sparse or hypersparse, not bitmap or full
     ASSERT (Z_sparsity == GxB_SPARSE || Z_sparsity == GxB_HYPERSPARSE) ;
@@ -138,7 +140,7 @@ GrB_Info GB_subassign_08n_slice
     GB_OK (GB_ewise_slice (
         &TaskList, &TaskList_size, &ntasks, &nthreads,
         Znvec, Zh_shallow, NULL, Z_to_A, Z_to_M, false,
-        NULL, A, M, Context)) ;
+        NULL, A, M, Werk)) ;
 
     //--------------------------------------------------------------------------
     // slice C(:,jC) for each fine task
@@ -197,7 +199,7 @@ GrB_Info GB_subassign_08n_slice
             // get jC, the corresponding vector of C
             //------------------------------------------------------------------
 
-            int64_t GB_LOOKUP_jC ;
+            GB_LOOKUP_VECTOR_jC (false, 0) ;
             bool cjdense = (pC_end - pC_start == Cvlen) ;
 
             //------------------------------------------------------------------

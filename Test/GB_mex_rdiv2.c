@@ -2,7 +2,7 @@
 // GB_mex_rdiv2: compute C=A*B with the rdiv2 operator
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -46,29 +46,36 @@ bool done_in_place = false ;
 double C_scalar = 0 ;
 struct GB_Matrix_opaque MT_header, T_header ;
 
-GrB_Info axb (GB_Context Context) ;
+GrB_Info axb (GB_Werk Werk) ;
 
 GrB_Semiring My_plus_rdiv2 = NULL ;
 GrB_BinaryOp My_rdiv2 = NULL ;
 
-void my_rdiv2 (double *z, const double *x, const float *y) ;
+ void my_rdiv2 (double *z, const double *x, const float *y) ;
 
-void my_rdiv2 (double *z, const double *x, const float *y)
-{
-    (*z) = ((double) (*y)) / (*x) ;
-}
+ void my_rdiv2 (double *z, const double *x, const float *y)
+ {
+     (*z) = (*y) / (*x) ;
+ }
+
+#define MY_RDIV2                                                \
+"void my_rdiv2 (double *z, const double *x, const float *y)\n"  \
+"{\n"                                                           \
+"    (*z) = (*y) / (*x) ;\n"                                    \
+"}"
 
 //------------------------------------------------------------------------------
 
-GrB_Info axb (GB_Context Context)
+GrB_Info axb (GB_Werk Werk)
 {
     // create the rdiv2 operator
-    info = GrB_BinaryOp_new (&My_rdiv2, my_rdiv2, GrB_FP64, GrB_FP64, GrB_FP32);
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    GrB_BinaryOp_wait_(&My_rdiv2) ;
-    #else
+//  info = GrB_BinaryOp_new (&My_rdiv2,
+//      (GxB_binary_function) my_rdiv2, GrB_FP64, GrB_FP64, GrB_FP32);
+    info = GxB_BinaryOp_new (&My_rdiv2,
+        (GxB_binary_function) my_rdiv2, GrB_FP64, GrB_FP64, GrB_FP32,
+        "my_rdiv2", MY_RDIV2) ;
+
     GrB_BinaryOp_wait_(My_rdiv2, GrB_MATERIALIZE) ;
-    #endif
     if (info != GrB_SUCCESS) return (info) ;
     info = GrB_Semiring_new (&My_plus_rdiv2, GxB_PLUS_FP64_MONOID, My_rdiv2) ;
     if (info != GrB_SUCCESS)
@@ -125,7 +132,7 @@ GrB_Info axb (GB_Context Context)
         &done_in_place,
         AxB_method,
         true,       // do the sort
-        Context) ;
+        Werk) ;
 
     if (info == GrB_SUCCESS)
     {
@@ -177,7 +184,7 @@ void mexFunction
     My_rdiv2 = NULL ;
     My_plus_rdiv2 = NULL ;
 
-    GB_CONTEXT (USAGE) ;
+    GB_WERK (USAGE) ;
 
     // check inputs
     if (nargout > 2 || nargin < 2 || nargin > 7)
@@ -210,10 +217,10 @@ void mexFunction
 
     // get the axb_method
     // 0 or not present: default
-    // 1001: Gustavson
-    // 1003: dot
-    // 1004: hash
-    // 1005: saxpy
+    // 7081: Gustavson
+    // 7083: dot
+    // 7084: hash
+    // 7085: saxpy
     GET_SCALAR (4, GrB_Desc_Value, AxB_method, GxB_DEFAULT) ;
 
     if (! ((AxB_method == GxB_DEFAULT) ||
@@ -252,13 +259,9 @@ void mexFunction
     GrB_Matrix_assign_(B, NULL, NULL, B64, GrB_ALL, 0, GrB_ALL, 0, NULL) ;
 
     // B must be completed
-    #if (GxB_IMPLEMENTATION_MAJOR <= 5)
-    GrB_Matrix_wait (&B) ;
-    #else
     GrB_Matrix_wait (B, GrB_MATERIALIZE) ;
-    #endif
 
-    METHOD (axb (Context)) ;
+    METHOD (axb (Werk)) ;
 
     // return C
     pargout [0] = GB_mx_Matrix_to_mxArray (&C, "C AxB result", false) ;

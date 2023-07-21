@@ -2,7 +2,7 @@
 // GB_sort.h: definitions for sorting functions
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
@@ -14,11 +14,11 @@
 
 #ifndef GB_SORT_H
 #define GB_SORT_H
+
 #include "GB.h"
 
 #define GB_BASECASE (64 * 1024)
 
-GB_PUBLIC
 void GB_qsort_1b    // sort array A of size 2-by-n, using 1 key (A [0][])
 (
     int64_t *restrict A_0,      // size n array
@@ -62,14 +62,9 @@ void GB_qsort_1b_size16 // GB_qsort_1b with A_1 with sizeof = 16
     const int64_t n
 ) ;
 
-GB_PUBLIC
-void GB_qsort_1    // sort array A of size 1-by-n
-(
-    int64_t *restrict A_0,      // size n array
-    const int64_t n
-) ;
+// See GB_callbacks.h:
+// GB_CALLBACK_QSORT_1_PROTO (GB_qsort_1) ; 
 
-GB_PUBLIC
 void GB_qsort_2     // sort array A of size 2-by-n, using 2 keys (A [0:1][])
 (
     int64_t *restrict A_0,      // size n array
@@ -77,7 +72,6 @@ void GB_qsort_2     // sort array A of size 2-by-n, using 2 keys (A [0:1][])
     const int64_t n
 ) ;
 
-GB_PUBLIC
 void GB_qsort_3     // sort array A of size 3-by-n, using 3 keys (A [0:2][])
 (
     int64_t *restrict A_0,      // size n array
@@ -86,7 +80,6 @@ void GB_qsort_3     // sort array A of size 3-by-n, using 3 keys (A [0:2][])
     const int64_t n
 ) ;
 
-GB_PUBLIC
 GrB_Info GB_msort_1     // sort array A of size 1-by-n
 (
     int64_t *restrict A_0,   // size n array
@@ -94,7 +87,6 @@ GrB_Info GB_msort_1     // sort array A of size 1-by-n
     int nthreads                // # of threads to use
 ) ;
 
-GB_PUBLIC
 GrB_Info GB_msort_2    // sort array A of size 2-by-n, using 2 keys (A [0:1][])
 (
     int64_t *restrict A_0,   // size n array
@@ -103,7 +95,6 @@ GrB_Info GB_msort_2    // sort array A of size 2-by-n, using 2 keys (A [0:1][])
     int nthreads                // # of threads to use
 ) ;
 
-GB_PUBLIC
 GrB_Info GB_msort_3    // sort array A of size 3-by-n, using 3 keys (A [0:2][])
 (
     int64_t *restrict A_0,   // size n array
@@ -241,7 +232,7 @@ GrB_Info GB_sort
     GrB_BinaryOp op,            // comparator for the sort
     GrB_Matrix A,               // matrix to sort
     const bool A_transpose,     // false: sort each row, true: sort each column
-    GB_Context Context
+    GB_Werk Werk
 ) ;
 
 #endif

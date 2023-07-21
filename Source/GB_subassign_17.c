@@ -2,10 +2,12 @@
 // GB_subassign_17: C(I,J)<!M,repl> = scalar ; using S
 //------------------------------------------------------------------------------
 
-// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2021, All Rights Reserved.
+// SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2023, All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 //------------------------------------------------------------------------------
+
+// JIT: needed.
 
 // Method 17: C(I,J)<!M,repl> = scalar ; using S
 
@@ -20,6 +22,7 @@
 // M: not bitmap
 
 #include "GB_subassign_methods.h"
+#include "GB_assign_shared_definitions.h"
 
 GrB_Info GB_subassign_17
 (
@@ -38,8 +41,8 @@ GrB_Info GB_subassign_17
     const GrB_Matrix M,
     const bool Mask_struct,
     const void *scalar,
-    const GrB_Type atype,
-    GB_Context Context
+    const GrB_Type scalar_type,
+    GB_Werk Werk
 )
 {
 
@@ -48,14 +51,15 @@ GrB_Info GB_subassign_17
     //--------------------------------------------------------------------------
 
     ASSERT (!GB_IS_BITMAP (C)) ; ASSERT (!GB_IS_FULL (C)) ;
-    ASSERT (!GB_aliased (C, M)) ;   // NO ALIAS of C==M
+    ASSERT (!GB_any_aliased (C, M)) ;   // NO ALIAS of C==M
 
     //--------------------------------------------------------------------------
     // S = C(I,J)
     //--------------------------------------------------------------------------
 
     GB_EMPTY_TASKLIST ;
-    GB_OK (GB_subassign_symbolic (S, C, I, ni, J, nj, true, Context)) ;
+    GB_CLEAR_STATIC_HEADER (S, &S_header) ;
+    GB_OK (GB_subassign_symbolic (S, C, I, ni, J, nj, true, Werk)) ;
 
     //--------------------------------------------------------------------------
     // get inputs
@@ -69,6 +73,7 @@ GrB_Info GB_subassign_17
     const int64_t *restrict Cp = C->p ;
     const bool C_is_hyper = (Ch != NULL) ;
     GB_GET_MASK ;
+    GB_GET_MASK_HYPER_HASH ;
     GB_GET_SCALAR ;
     GB_GET_S ;
     GrB_BinaryOp accum = NULL ;
@@ -120,8 +125,8 @@ GrB_Info GB_subassign_17
             // get S(iA_start:end,j) and M(iA_start:end,j)
             //------------------------------------------------------------------
 
-            GB_GET_VECTOR_FOR_IXJ (S, iA_start) ;
-            GB_GET_VECTOR_FOR_IXJ (M, iA_start) ;
+            GB_LOOKUP_VECTOR_FOR_IXJ (S, iA_start) ;
+            GB_LOOKUP_VECTOR_FOR_IXJ (M, iA_start) ;
 
             //------------------------------------------------------------------
             // C(I(iA_start,iA_end-1),jC)<!M,repl> = scalar
@@ -151,7 +156,7 @@ GrB_Info GB_subassign_17
                 if (i == iM)
                 { 
                     // mij = (bool) M [pM]
-                    mij = GBB (Mb, pM) && GB_mcast (Mx, pM, msize) ;
+                    mij = GBB (Mb, pM) && GB_MCAST (Mx, pM, msize) ;
                     GB_NEXT (M) ;
                 }
                 else
@@ -244,8 +249,8 @@ GrB_Info GB_subassign_17
             // get S(iA_start:end,j) and M(iA_start:end,j)
             //------------------------------------------------------------------
 
-            GB_GET_VECTOR_FOR_IXJ (S, iA_start) ;
-            GB_GET_VECTOR_FOR_IXJ (M, iA_start) ;
+            GB_LOOKUP_VECTOR_FOR_IXJ (S, iA_start) ;
+            GB_LOOKUP_VECTOR_FOR_IXJ (M, iA_start) ;
 
             //------------------------------------------------------------------
             // C(I(iA_start,iA_end-1),jC)<!M,repl> = scalar
@@ -275,7 +280,7 @@ GrB_Info GB_subassign_17
                 if (i == iM)
                 { 
                     // mij = (bool) M [pM]
-                    mij = GBB (Mb, pM) && GB_mcast (Mx, pM, msize) ;
+                    mij = GBB (Mb, pM) && GB_MCAST (Mx, pM, msize) ;
                     GB_NEXT (M) ;
                 }
                 else
